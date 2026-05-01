@@ -5,7 +5,42 @@ __pycache__/
 .spyproject/
 docs/build/
 .vscode/
+.venv/# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+dist/
+build/
+*.dist-info/
+
+# Virtual environments
 .venv/
+venv/
+env/
+
+# IDEs
+.vscode/
+.spyproject/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Pytest
+.pytest_cache/
+
+# Sphinx
+docs/_build/
+
+# Distribution
+*.whl
+*.tar.gz
 dist/
 *.dist-info/
 .DS_Store
+build/
