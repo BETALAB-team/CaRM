@@ -7,6 +7,7 @@ the global system matrix, advancing the thermal state, and computing
 far-field interference via the FLS model. Supports both parallel and
 series borehole configurations.
 """
+
 from dataclasses import dataclass, field
 
 from numpy.typing import NDArray
@@ -171,9 +172,7 @@ class Simulation:
                 for j in range(self.model.ground[0].m_mesh)
             ],
         ]
-        self.T_bc = np.repeat(
-            self.T_bc[:, None, :], len(self.model.ground), axis=1
-        )
+        self.T_bc = np.repeat(self.T_bc[:, None, :], len(self.model.ground), axis=1)
 
     def _init_fls(self) -> None:
         fls_modes = {"sqrt", "continuous"}
@@ -298,7 +297,7 @@ class Simulation:
 
         currstate = State(T0_matrix)
         self.T_history[0] = T0_matrix.copy()
-        
+
         self.A = [0] * n  # type: ignore
         self.A_inv = copy.deepcopy(self.A)  # type: ignore
 
@@ -343,14 +342,7 @@ class Simulation:
                     Ts_old,
                 ) = self.model._get_temperatures(currstate, j)
 
-                if (
-                    step == 0
-                    or (self.mw_tot[j, step] != self.mw_tot[j, step - 1])
-                    or (
-                        self.mw_tot[j, step] != 0
-                        and self.Tf1[j, step] != self.Tf1[j, step - 1]
-                    )
-                ):
+                if step == 0 or (self.mw_tot[j, step] != self.mw_tot[j, step - 1]):
                     self.A[j] = build_global_matrix(
                         self.model,
                         gr_p,
@@ -436,6 +428,9 @@ class Simulation:
         currstate = State(T0_matrix)
         self.T_history[0] = T0_matrix.copy()
 
+        self.A = [0] * n  # type: ignore
+        self.A_inv = copy.deepcopy(self.A)  # type: ignore
+
         for step in range(self.n_steps):
             # external environment aliasing
             T_ext = self.envinput.T_ext[step]
@@ -475,14 +470,11 @@ class Simulation:
                         Ts_old,
                     ) = self.model._get_temperatures(currstate, j)
 
-                    A = build_global_matrix(
-                        self.model,
-                        gr_p,
-                        self.env,
-                        self.timesteps,
-                        mw_loc,
-                    )
-                    A_inv = splu(A)
+                    if step == 0 or mw_loc != self.mw_tot[i, step - 1]:
+                        self.A[j] = build_global_matrix(
+                            self.model, gr_p, self.env, self.timesteps, mw_loc
+                        )
+                        self.A_inv[j] = splu(self.A[j])
 
                     b = build_global_rhs(
                         self.model,
@@ -502,14 +494,14 @@ class Simulation:
                         Tf1_loc,
                     )
 
-                    assert np.all(np.isfinite(A.data)), "A contains NaN or Inf"  # type: ignore
+                    assert np.all(np.isfinite(self.A[j].data)), "A contains NaN or Inf"  # type: ignore
                     assert np.all(np.isfinite(b)), "b contains NaN or Inf"  # type: ignore
 
-                    T_new_i_j = A_inv.solve(b)  # type: ignore
+                    T_new_i_j = self.A_inv[j].solve(b)  # type: ignore
 
                     assert np.all(np.isfinite(T_new_i_j)), "T_new is not finite"
 
-                    r = A @ T_new_i_j - b
+                    r = self.A[j] @ T_new_i_j - b
                     assert np.max(np.abs(r)) < 1e-6
 
                     Tfout = T_new_i_j[ns + nm + borehole.id_outlet]
