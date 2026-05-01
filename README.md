@@ -134,7 +134,12 @@ from the output array `T_history`.
 
 ## Documentation
 
-To build the documentation locally:
+To build the documentation locally, install the documentation dependencies first:
+```bash
+cd CaRM
+pip install -e ".[docs]"
+```
+Then build:
 ```bash
 cd docs
 make html
