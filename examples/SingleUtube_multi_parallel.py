@@ -1,0 +1,311 @@
+# -*- coding: utf-8 -*-
+"""
+Example: Parallel configuration with single U-tube boreholes.
+
+Runs a 9-borehole field in parallel mode and plots:
+  - Outlet fluid temperature over time for a reference borehole
+  - Shell temperature vertical profile at selected timesteps
+  - Fluid (down/up) temperature vertical profile at selected timesteps
+"""
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+from pathlib import Path
+
+from carm import (
+    BoreholeGeometry,
+    BoreholeMesh,
+    BoreholeThermalProperties,
+    SingleUtube,
+)
+from carm import EnvironmentalProperties, EnvironmentalTimeSeries
+from carm import FieldInput
+from carm import Fluid
+from carm import GroundGeometry, GroundMesh
+from carm import PhysicalModel
+from carm import Simulation
+
+
+def main():
+
+    # -------------------------------------------------------------------------
+    # Input parameters
+    # -------------------------------------------------------------------------
+
+    BASE_DIR = Path(__file__).parent
+
+    field_path = BASE_DIR / "spacing.xlsx"
+    path = BASE_DIR / "input_env.xlsx"
+
+    n_bhes = 9
+    x_min, y_min = -2.5, -2.5
+    x_max, y_max = 12.5, 12.5
+
+    stratification = [(1.8, 947.37, 1900, 111)]
+    n_mesh = 20
+    m_mesh = 40
+    Tg = 13
+    L = 100
+    m_mesh_sup = 4
+    m_mesh_inf = 40
+    L_sup = 1
+    L_inf = 10
+    segments = 8
+
+    k_w = 0.568709114496803
+    rho_w = 1000.1435933169
+    cp_w = 4207.40834247225
+    ni_w = 1.49626063208248e-6
+
+    Dpi = 0.026
+    Lbore = 100
+    D0 = 0.15
+    Rp0 = 0.25
+    RppB = 0.72
+    n_pipes = 2
+    pipe_thick = 0.003
+    pipe_spacing = 0.0823
+    cp_0 = 1460
+    rho_0 = 1655
+    k0 = 1.8
+
+    absorptance = 0.7
+    eps = 0.95
+    At = 10
+    tau = 0
+    tau_y = 365 * 24 * 3600
+    tau_shift = 210 * 24 * 3600
+    R_ext = 0.04
+
+    Tm = 13
+
+    dt = 3600
+    n_steps = 276
+
+    # -------------------------------------------------------------------------
+    # Build model
+    # -------------------------------------------------------------------------
+
+    myfield = FieldInput(n_bhes=n_bhes, xmin=x_min, ymin=y_min, xmax=x_max, ymax=y_max, rb = D0 / 2.0)
+    myfield.from_excel(field_path)
+
+    fluid = Fluid(k_w=k_w, rho_w=rho_w, cp_w=cp_w, ni_w=ni_w)
+
+    bore_geom = BoreholeGeometry(Lbore=Lbore, D0=D0)
+    bore_mesh = BoreholeMesh(m_mesh=m_mesh)
+    bore_th_props = BoreholeThermalProperties(cp_0=cp_0, rho_0=rho_0, k0=k0)
+    props_b = SingleUtube(
+        geom=bore_geom,
+        mesh=bore_mesh,
+        thermalprops=bore_th_props,
+        fluid=fluid,
+        Rp0=Rp0,
+        RppB=RppB,
+        pipe_spacing=pipe_spacing,
+        pipe_thick=pipe_thick,
+        Dpi=Dpi,
+        n_pipes=n_pipes,
+    )
+
+    ground_geom = GroundGeometry(D0=D0, L=L, L_sup=L_sup, L_inf=L_inf, rn=None)
+    ground_mesh = GroundMesh(
+        n_mesh=n_mesh,
+        m_mesh=m_mesh,
+        m_mesh_sup=m_mesh_sup,
+        m_mesh_inf=m_mesh_inf,
+        segments=segments,
+    )
+
+    env_input = EnvironmentalTimeSeries.from_excel(Tm=Tm, path=path)
+    env_props = EnvironmentalProperties(
+        R_ext=R_ext,
+        absorptance=absorptance,
+        eps=eps,
+        At=At,
+        tau=tau,
+        tau_y=tau_y,
+        tau_shift=tau_shift,
+    )
+
+    model = PhysicalModel(
+        ground_geom=ground_geom,
+        ground_mesh=ground_mesh,
+        borehole=props_b,
+        fluid=fluid,
+        Tg=Tg,
+        stratification=stratification,
+        fieldinput=myfield,
+    )
+
+    # -------------------------------------------------------------------------
+    # Simulation
+    # -------------------------------------------------------------------------
+
+    Tf1 = np.full((n_bhes, n_steps), 2, dtype=np.float64)
+    mw_tot = np.full((n_bhes, n_steps), 0.1657, dtype=np.float64)
+
+    simulation = Simulation(
+        model=model, envinput=env_input, timesteps=dt, n_steps=n_steps,
+        envprops=env_props, mw_tot=mw_tot, Tf1=Tf1,
+    )
+    T_history = simulation.run(parallel=True)
+
+    # -------------------------------------------------------------------------
+    # Post-processing indices
+    # -------------------------------------------------------------------------
+
+    # T_history shape: (n_steps + 1, n_bhes, n_dof)
+    # n_dof layout: [sup | ground | borehole | inf]
+    # within borehole block: n_equations * m_mesh nodes
+    # within each node block: [shell, ..., fluid_down, fluid_up]
+    nsup   = m_mesh_sup + 1
+    nground = n_mesh * m_mesh
+    reference_borehole = 0
+
+    time = np.arange(dt, dt * (n_steps + 1), dt, dtype=np.float64)
+    depth = np.arange(-L_sup, -L_sup - model.ground[0].dz * m_mesh, -model.ground[0].dz)
+
+    # shell: first equation of each borehole node block
+    slice_shell = [nsup + nground + j * props_b.n_equations for j in range(m_mesh)]
+    # fluid down/up: last two equations of each node block
+    slice_down  = [nsup + nground + j * props_b.n_equations + (props_b.n_equations - 2) for j in range(m_mesh)]
+    slice_up    = [nsup + nground + j * props_b.n_equations + (props_b.n_equations - 1) for j in range(m_mesh)]
+
+    # -------------------------------------------------------------------------
+    # Plot: field layout
+    # -------------------------------------------------------------------------
+
+    model.field.plot_field(show_ids=True, show_graph=True)
+
+    # -------------------------------------------------------------------------
+    # Plot: outlet fluid temperature over time
+    # -------------------------------------------------------------------------
+
+    Tfout = T_history[1:, reference_borehole, nsup + nground + (props_b.n_equations - 1)]
+
+    fig, ax = plt.subplots(figsize=(4, 3))
+    ax.plot(time / 3600, Tfout)
+    ax.set_xlabel("Time [h]")
+    ax.set_ylabel("Temperature [°C]")
+    ax.set_title(f"Outlet fluid temperature for Borehole {reference_borehole}")
+    ax.grid(True, which='major', linestyle='--', linewidth=0.5, alpha=0.4)
+    plt.tight_layout()
+    plt.show()
+
+    # -------------------------------------------------------------------------
+    # Plot: shell temperature vertical profile
+    # -------------------------------------------------------------------------
+
+    Tshell_10  = T_history[11,  reference_borehole, slice_shell]
+    Tshell_150 = T_history[151, reference_borehole, slice_shell]
+    Tshell_276 = T_history[276, reference_borehole, slice_shell]
+
+    fig, ax = plt.subplots(figsize=(4, 3))
+    ax.plot(Tshell_10,  depth, label='Step = 10')
+    ax.plot(Tshell_150, depth, label='Step = 150')
+    ax.plot(Tshell_276, depth, label='Step = 276')
+    ax.set_xlabel("Temperature [°C]")
+    ax.set_ylabel("Depth [m]")
+    ax.set_xlim(2, 15)
+    ax.legend(fontsize=7)
+    ax.set_title(f"Shell temperature for Borehole {reference_borehole}")
+    ax.grid(True, which='major', linestyle='--', linewidth=0.5, alpha=0.4)
+    plt.tight_layout()
+    plt.show()
+
+    # -------------------------------------------------------------------------
+    # Plot: fluid (down/up) temperature vertical profile
+    # -------------------------------------------------------------------------
+
+    T_down_10  = T_history[11,  reference_borehole, slice_down]
+    T_down_150 = T_history[151, reference_borehole, slice_down]
+    T_down_276 = T_history[276, reference_borehole, slice_down]
+    T_up_10    = T_history[11,  reference_borehole, slice_up]
+    T_up_150   = T_history[151, reference_borehole, slice_up]
+    T_up_276   = T_history[276, reference_borehole, slice_up]
+
+    fig, ax = plt.subplots(figsize=(4, 3))
+    ax.plot(T_down_10,  depth, color="tab:blue",   linestyle="-",  label="Step = 10")
+    ax.plot(T_up_10,    depth, color="tab:blue",   linestyle="--")
+    ax.plot(T_down_150, depth, color="tab:orange", linestyle="-",  label="Step = 150")
+    ax.plot(T_up_150,   depth, color="tab:orange", linestyle="--")
+    ax.plot(T_down_276, depth, color="tab:green",  linestyle="-",  label="Step = 276")
+    ax.plot(T_up_276,   depth, color="tab:green",  linestyle="--")
+    ax.set_xlabel("Temperature [°C]")
+    ax.set_ylabel("Depth [m]")
+    ax.set_xlim(1, 7)
+    ax.legend(fontsize=7)
+    ax.set_title(f"Fluid temperature for Borehole {reference_borehole}")
+    ax.grid(True, which='major', linestyle='--', linewidth=0.5, alpha=0.4)
+    plt.tight_layout()
+    plt.show()
+
+    # -------------------------------------------------------------------------
+    # Plot: ground temperature heatmap
+    # -------------------------------------------------------------------------
+
+    nsup = m_mesh_sup + 1
+    steps = [10, 150, 276]
+    r0 = model.ground[0].r0
+    rn = model.ground[0].rn
+    dz = model.ground[0].dz
+
+    fig, axes = plt.subplots(1, 3, figsize=(12, 3))
+    ax1, ax2, ax3 = axes
+
+    T_all = np.array([T_history[steps, reference_borehole, nsup : nsup + nground ]]).reshape(len(steps), m_mesh, n_mesh)
+
+    vmin, vmax = T_all.min(), T_all.max()
+
+    x_ticks = np.round(np.linspace(r0, rn, 5), decimals = 2)
+
+    depth = np.arange(-L_sup, -L_sup - dz * m_mesh, -dz)
+    radius = np.linspace(D0/2, rn, n_mesh)
+    R, D = np.meshgrid(radius, depth)
+
+    for i, (t, ax) in enumerate(zip(steps, axes)):
+
+        pc = ax.pcolormesh(R, D, T_all[i], cmap='RdYlGn_r', shading='gouraud', vmin=vmin, vmax=vmax)
+        ax.set_xlabel("Radius [m]")
+        ax.set_ylabel("Depth [m]")
+        fig.colorbar(pc, ax=ax, label="Temperature [°C]")
+        ax.set_title(f"Step {t}")
+        ax.set_xlim((r0, rn))
+        ax.set_xticks(x_ticks)
+
+    fig.suptitle(f"Ground temperature - BHE {reference_borehole}")
+    plt.tight_layout()
+    plt.show()
+
+    # -------------------------------------------------------------------------
+    # Plot: Boundary condition temperature
+    # -------------------------------------------------------------------------
+
+    bhes = [0, 1, 2]
+    T_bc_mean = np.mean(simulation.T_bc[:, bhes, :], axis = 2)
+
+    Tbc0 = T_bc_mean[:, 0]
+    Tbc1 = T_bc_mean[:, 1]
+    Tbc2 = T_bc_mean[:, 2]
+
+    fig, ax = plt.subplots(figsize = (4, 3))
+
+    ax.plot(time / 3600, Tbc0, linestyle = "--", label = r"$T_{bc,0}$")
+    ax.plot(time / 3600, Tbc1, linestyle = ":", label = r"$T_{bc,1}$")
+    ax.plot(time / 3600, Tbc2, linestyle = "-.", label = r"$T_{bc,2}$")
+
+    ax.legend(fontsize = 7)
+    ax.set_xlabel("Time [h]")
+    ax.set_ylabel("Temperature [°C]")
+    ax.grid(True, which = 'major', linestyle = '--', linewidth = 0.5, alpha = 0.4)
+    ax.set_ylim(11, 14)
+
+    ax.set_title("Boundary condition temperature from FLS for Borehole 0 - 1 - 2")
+    plt.tight_layout()
+    plt.show()
+
+
+
+if __name__ == "__main__":
+    main()

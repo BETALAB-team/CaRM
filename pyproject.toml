@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+description = "Python library for simulation of borehole heat exchanger systems"
+authors = [
+    {name = "Alessio Tollin"},
+    {name = "Angelo Zarrella"},
+]
+requires-python = ">=3.11"
+
+license = {text = "MIT"}
+name = "CaRM"
+version = "0.1.0"
+dependencies = [
+    "numpy",       # array
+    "scipy",       # scientific functions
+    "matplotlib",  # data plot
+    "pandas",      # data handling
+    "shapely",     # field geometry
+    "networkx",    # borehole neighbor graph
+    "openpyxl",    # excel input
+]
+
+[project.optional-dependencies]
+dev = [
+    "pygfunction",
+    "pytest",
+]
+
+docs = [
+    "sphinx",
+    "sphinx-rtd-theme",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["carm*"]

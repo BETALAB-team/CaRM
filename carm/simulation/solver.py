@@ -1,0 +1,529 @@
+# -*- coding: utf-8 -*-
+"""
+Simulation module.
+
+Orchestrates the time-stepping loop for the BHE simulation, assembling
+the global system matrix, advancing the thermal state, and computing
+far-field interference via the FLS model. Supports both parallel and
+series borehole configurations.
+"""
+from dataclasses import dataclass, field
+
+from numpy.typing import NDArray
+from typing import Sequence, Dict
+
+from ..matrix import build_global_matrix, build_global_rhs
+from ..external_environment import (
+    ExternalEnvironment,
+    EnvironmentalProperties,
+    EnvironmentalTimeSeries,
+)
+from ..model import PhysicalModel
+from ..state import State
+from ..thermal_interference import FiniteLineSolution
+from ..initial_conditions import kusuda_achenbach
+
+from scipy.sparse.linalg import splu
+
+import time
+import copy
+import numpy as np
+
+
+@dataclass
+class Simulation:
+    """
+    Time-stepping orchestrator for the BHE simulation.
+
+    Assembles all physical inputs, initializes the FLS model and boundary
+    conditions, and runs the simulation via ``run()``. Supports parallel
+    (independent boreholes) and series (fluid outlet of one borehole feeds
+    the next) configurations.
+
+    Attributes
+    ----------
+    model : PhysicalModel
+        Full physical model of the BHE system.
+    envprops : EnvironmentalProperties
+        Static radiative and thermal properties of the external environment.
+    envinput : EnvironmentalTimeSeries
+        Time series of external air temperature and solar irradiance.
+    timesteps : float
+        Duration of each time step [s].
+    n_steps : int
+        Total number of simulation time steps.
+    mw_tot : NDArray[np.float64]
+        Mass flow rate time series, shape (n_bhes, n_steps) or
+        (n_groups, n_steps) in series mode [kg/s].
+    Tf1 : NDArray[np.float64]
+        Inlet fluid temperature time series, shape (n_bhes, n_steps) or
+        (n_groups, n_steps) [°C].
+        When mw is 0 this values must be set as NaN.
+
+        Example
+        -------
+        >>> Tf1_5 = np.full((1, 100), 4, dtype = np.float64)
+        >>> Tf1_null = np.full((1, 200), np.nan, dtype = np.float64)
+        >>> Tf1 = np.concatenate((Tf1_5, Tf1_null), axis = 1)
+
+    fls_mode : str
+        Fls simulation mode, it accepts only sqrt and continuous mode.
+        The first one is less expensive while the latter is more accurate.
+        See the proper section to understand the comparison.
+    groups : dict or None
+        Series groups mapping group index to ordered list of borehole indices.
+        Required for series mode, ``None`` in parallel mode.
+    env : ExternalEnvironment
+        Assembled external environment, built at construction time.
+    T_sup_kusuda : NDArray[np.float64]
+        Kusuda-Achenbach temperature profile for upper ground layers,
+        shape (n_steps, m_mesh_sup + 1) [°C].
+    T_middle_kusuda : NDArray[np.float64]
+        Kusuda-Achenbach temperature profile for middle ground and borehole layers,
+        shape (n_steps, m_mesh * (n_mesh + n_equations)) [°C].
+    T_inf_kusuda : NDArray[np.float64]
+        Kusuda-Achenbach temperature profile for lower ground layers,
+        shape (n_steps, m_mesh_inf) [°C].
+    T_bc : NDArray[np.float64]
+        Far-field boundary condition array, shape (n_steps, n_bhes, m_mesh) [°C].
+    T_history : NDArray[np.float64]
+        Output temperature history, shape (n_steps + 1, n_bhes, n_dof) [°C].
+    fls : FiniteLineSolution or None
+        FLS thermal interference model. ``None`` in single-borehole mode.
+    """
+
+    model: PhysicalModel
+    envprops: EnvironmentalProperties
+    envinput: EnvironmentalTimeSeries
+    timesteps: float
+    n_steps: int
+    mw_tot: NDArray[np.float64]  # shape: (n_bhes, n_steps) | (n_groups, n_steps)
+    Tf1: NDArray[np.float64]  # shape: (n_bhes, n_steps) | (n_groups, n_steps))
+    fls_mode: str = "sqrt"  # "sqrt" | "continuous"
+    groups: Dict | None = None
+    T_sup_kusuda: NDArray[np.float64] = field(init=False)
+    T_middle_kusuda: NDArray[np.float64] = field(init=False)
+    T_inf_kusuda: NDArray[np.float64] = field(init=False)
+    env: ExternalEnvironment = field(init=False)
+    T_bc: NDArray[np.float64] = field(init=False)  # boundary condition array
+    T_history: NDArray[np.float64] = field(init=False)  # output array
+    fls: FiniteLineSolution | None = field(default=None, init=False)
+
+    def __post_init__(self):
+        if self.model.fieldinput is None:
+            if (self.mw_tot.shape[1] != self.n_steps) or (
+                self.Tf1.shape[1] != self.n_steps
+            ):
+                raise ValueError("mw_tot and Tf1 time series must have n_steps")
+        else:
+            if self.groups is not None:
+                if self.mw_tot.shape != (
+                    len(self.groups),
+                    self.n_steps,
+                ) or self.Tf1.shape != (len(self.groups), self.n_steps):
+                    raise ValueError(
+                        "mw_tot and Tf1 time series must have n_bhes rows and n_steps columns"
+                    )
+
+            else:
+                if self.mw_tot.shape != (
+                    self.model.fieldinput.n_bhes,
+                    self.n_steps,
+                ) or self.Tf1.shape != (self.model.fieldinput.n_bhes, self.n_steps):
+                    raise ValueError(
+                        "mw_tot and Tf1 time series must have n_bhes rows and n_steps columns"
+                    )
+
+        if (
+            len(self.envinput.T_ext) < self.n_steps
+            or len(self.envinput.SolarRad) < self.n_steps
+        ):
+            raise ValueError("T_ext and SolarRad time series must non exceed n_steps")
+        if len(self.envinput.T_ext) != len(self.envinput.SolarRad):
+            raise ValueError(
+                "T_ext and SolarRad time series must have the same number of elements"
+            )
+        if (
+            len(self.envinput.T_ext) > self.n_steps
+            or len(self.envinput.SolarRad) > self.n_steps
+        ):
+            print(
+                "T_ext and SolarRad lengths > n_steps, the first n_steps values are used"
+            )
+
+        self.env = ExternalEnvironment(envprops=self.envprops, envinput=self.envinput)
+        self.T_sup_kusuda, self.T_middle_kusuda, self.T_inf_kusuda = kusuda_achenbach(
+            self.model.ground[0],
+            self.model.borehole,
+            self.envprops,
+            self.envinput.Tm,
+            self.timesteps,
+            self.n_steps,
+        )
+        self._init_fls()
+        self._boundary_condition()
+
+    def _boundary_condition(self) -> None:
+        self.T_bc = self.T_middle_kusuda[
+            :,
+            [
+                j * self.model.ground[0].n_mesh
+                for j in range(self.model.ground[0].m_mesh)
+            ],
+        ]
+        self.T_bc = np.repeat(
+            self.T_bc[:, None, :], len(self.model.ground), axis=1
+        )
+
+    def _init_fls(self) -> None:
+        fls_modes = {"sqrt", "continuous"}
+        if self.fls_mode not in fls_modes:
+            raise ValueError(
+                "fls_mode must be sqrt or continuous, see documentations to choose the one you prefer"
+            )
+
+        time_hist = np.arange(
+            self.timesteps,
+            self.timesteps * (self.n_steps + 1),
+            self.timesteps,
+            dtype=np.float64,
+        )  # dt array: (dt, 2 dt, 3 dt, 4 dt, ...., (n_steps + 1) * dt)
+
+        if len(self.model.ground) > 1:
+            self.fls = FiniteLineSolution(
+                physicalmodel=self.model,
+                n_steps=self.n_steps,
+                time_hist=time_hist,
+                fls_mode=self.fls_mode,
+            )
+
+    def run(
+        self, parallel: bool | None = None, series: bool | None = None
+    ) -> NDArray[np.float64]:
+        """
+        Run the simulation in parallel or series mode.
+
+        Dispatches to ``_run_parallel()`` or ``_run_series()`` based on the
+        provided flags. For single-borehole configurations, ``parallel`` and
+        ``series`` must both be ``None``.
+
+        Parameters
+        ----------
+        parallel : bool or None
+            Set to ``True`` to run in parallel mode (independent boreholes).
+        series : bool or None
+            Set to ``True`` to run in series mode (fluid outlet chaining).
+
+        Returns
+        -------
+        NDArray[np.float64]
+            Temperature history array of shape (n_steps + 1, n_bhes, n_dof).
+
+        Raises
+        ------
+        ValueError
+            If both or neither flags are set, or if series groups are not defined.
+
+        Examples
+        --------
+        >>> T_hist = sim.run(parallel=True)
+        >>> T_hist.shape
+        (n_steps + 1, n_bhes, n_dof)
+        """
+
+        if len(self.model.ground) > 1:
+
+            if parallel is True and series is None:
+                return self._run_parallel()
+
+            elif parallel is None and series is True:
+                nodes = sorted(list(self.model.field._borehole_graph))
+                neighbors = {
+                    b: list(self.model.field._borehole_graph.neighbors(b))
+                    for b in nodes
+                }
+
+                if self.groups is None:
+                    raise ValueError("Define series groups to put in parallel")
+
+                for group in self.groups.values():
+                    if not all(b in neighbors[a] for a, b in zip(group, group[1:])):
+                        raise ValueError("Some borehole can't be connected in series")
+
+                return self._run_series()
+
+            else:
+                raise ValueError(
+                    "Invalid configuration: set exactly one of parallel or series to True"
+                )
+        else:
+            if parallel is not None and series is not None:
+                raise ValueError(
+                    "Series and Parallel must be set as None when running single borehole configuration"
+                )
+            else:
+                return self._run_parallel()
+
+    def _run_parallel(self) -> NDArray[np.float64]:
+        tic = time.time()  # start simulation
+
+        model = self.model
+        ground = model.ground[0]  # alias for ground
+        borehole = model.borehole  # alias for borehole
+        n = len(model.ground)  # number of boreholes
+        ns = ground.m_mesh_sup + 1  # upper ground layers
+        nm = ground.m_mesh * ground.n_mesh  # middle ground layers
+        nb = borehole.m_mesh * borehole.n_equations  # middle borehole layers
+        ninf = ground.m_mesh_inf  # lower ground layers
+
+        T0_matrix = np.zeros(
+            (n, (ns + nm + nb + ninf)), dtype=np.float64
+        )  # Starting condition initialization
+
+        self.T_history = np.empty(
+            (self.n_steps + 1, n, (ns + nm + nb + ninf)),
+            dtype=np.float64,
+        )  # T_history initialization array, n_steps x n_bhes x total mesh
+
+        self.q_nbhes = np.zeros(
+            (self.n_steps, n), dtype=np.float64
+        )  # Borehole heat flux array, n_steps x n_bhes
+
+        Tstartsup = self.T_sup_kusuda[0, :].ravel()
+        Tstartmiddle = self.T_middle_kusuda[0, :].ravel()
+        Tstartinf = self.T_inf_kusuda[0, :].ravel()
+
+        T0 = np.concatenate((Tstartsup, Tstartmiddle, Tstartinf))
+        T0_matrix[:] = T0  # broadcasting on number of borehole axis
+
+        currstate = State(T0_matrix)
+        self.T_history[0] = T0_matrix.copy()
+        
+        self.A = [0] * n  # type: ignore
+        self.A_inv = copy.deepcopy(self.A)  # type: ignore
+
+        for step in range(self.n_steps):
+            # external environment aliasing
+            T_ext = self.envinput.T_ext[step]
+            T_sky = self.env.T_sky[step]
+            SolarRad = self.env.envinput.SolarRad[step]
+
+            currstate.save_old()
+
+            idx_null = np.where(self.mw_tot[:, step] == 0)[0]
+            if len(idx_null) > 0:
+                self.Tf1[idx_null, step] = currstate.T_old[
+                    idx_null, ns + nm + (borehole.id_inlet)
+                ]
+
+            Tfout = currstate.T_old[:, ns + nm + borehole.id_outlet]
+
+            T_new_step = np.zeros((n, (ns + nm + nb + ninf)))
+
+            if step != 0:
+                qfluid = (
+                    self.mw_tot[:, step]
+                    * model.fluid.cp_w
+                    * (self.Tf1[:, step] - Tfout)
+                )
+                self.q_nbhes[step] = qfluid
+
+            if self.fls is not None:
+                self.T_bc[step] = self.T_bc[step] + self.fls._compute_delta_t(
+                    q_nbhes=self.q_nbhes, step=step
+                )
+
+            for j, gr_p in enumerate(model.ground):
+
+                (
+                    T_borehole_old,
+                    T_ground_old,
+                    T_ground_sup_old,
+                    T_ground_inf_old,
+                    Ts_old,
+                ) = self.model._get_temperatures(currstate, j)
+
+                if (
+                    step == 0
+                    or (self.mw_tot[j, step] != self.mw_tot[j, step - 1])
+                    or (
+                        self.mw_tot[j, step] != 0
+                        and self.Tf1[j, step] != self.Tf1[j, step - 1]
+                    )
+                ):
+                    self.A[j] = build_global_matrix(
+                        self.model,
+                        gr_p,
+                        self.env,
+                        self.timesteps,
+                        self.mw_tot[j, step],
+                    )
+                    self.A_inv[j] = splu(self.A[j])
+
+                self.b = build_global_rhs(
+                    self.model,
+                    gr_p,
+                    self.env,
+                    self.timesteps,
+                    T_ground_old,
+                    T_borehole_old,
+                    T_ground_sup_old,
+                    T_ground_inf_old,
+                    Ts_old,
+                    T_ext,
+                    T_sky,
+                    self.T_bc[step, j],
+                    SolarRad,
+                    self.mw_tot[j, step],
+                    self.Tf1[j, step],
+                )
+
+                assert np.all(np.isfinite(self.A[j].data)), "A contains NaN or Inf"  # type: ignore
+                assert np.all(np.isfinite(self.b)), "b contains NaN or Inf"  # type: ignore
+
+                T_new_j = self.A_inv[j].solve(self.b)  # type: ignore
+
+                assert np.all(np.isfinite(T_new_j)), "T_new is not finite"
+
+                r = self.A[j] @ T_new_j - self.b
+                assert np.max(np.abs(r)) < 1e-6
+
+                T_new_step[j, :] = T_new_j
+
+            currstate.update(T_new_step)
+            self.T_history[step + 1] = currstate.T_state.copy()
+
+        toc = time.time()
+
+        print(f"running time: {(toc - tic)} seconds")
+
+        return self.T_history
+
+    def _run_series(self) -> NDArray[np.float64]:
+        tic = time.time()  # start simulation
+
+        model = self.model
+        ground = model.ground[0]  # alias for ground
+        borehole = model.borehole  # alias for borehole
+        n = len(model.ground)  # number of boreholes
+        ns = ground.m_mesh_sup + 1  # upper ground layers
+        nm = ground.m_mesh * ground.n_mesh  # middle ground layers
+        nb = borehole.m_mesh * borehole.n_equations  # middle borehole layers
+        ninf = ground.m_mesh_inf  # lower ground layers
+
+        T0_matrix = np.zeros(
+            (n, (ns + nm + nb + ninf)), dtype=np.float64
+        )  # Starting condition initialization
+
+        self.T_history = np.empty(
+            (self.n_steps + 1, n, (ns + nm + nb + ninf)),
+            dtype=np.float64,
+        )  # T_history initialization array, n_steps x n_bhes x total mesh
+
+        qfluid = np.zeros((self.n_steps, n), dtype=np.float64)  # fluid heat flux array
+
+        self.q_nbhes = copy.deepcopy(
+            qfluid
+        )  # Borehole heat flux array, n_steps x n_bhes
+
+        Tstartsup = self.T_sup_kusuda[0, :].ravel()
+        Tstartmiddle = self.T_middle_kusuda[0, :].ravel()
+        Tstartinf = self.T_inf_kusuda[0, :].ravel()
+
+        T0 = np.concatenate((Tstartsup, Tstartmiddle, Tstartinf))
+        T0_matrix[:] = T0  # broadcasting on number of borehole axis
+
+        currstate = State(T0_matrix)
+        self.T_history[0] = T0_matrix.copy()
+
+        for step in range(self.n_steps):
+            # external environment aliasing
+            T_ext = self.envinput.T_ext[step]
+            T_sky = self.env.T_sky[step]
+            SolarRad = self.env.envinput.SolarRad[step]
+
+            currstate.save_old()
+
+            T_new_step = np.zeros((n, (ns + nm + nb + ninf)))
+
+            if step != 0:
+                self.q_nbhes[step] = qfluid[step - 1]
+
+            if self.fls is not None:
+                self.T_bc[step] = self.T_bc[step] + self.fls._compute_delta_t(
+                    q_nbhes=self.q_nbhes, step=step
+                )
+
+            idx_null = np.where(self.mw_tot[:, step] == 0)[0]
+            if len(idx_null) > 0:
+                self.Tf1[idx_null, step] = currstate.T_old[
+                    idx_null, ns + nm + (borehole.id_inlet)
+                ]
+
+            for i, group in enumerate(self.groups.values()):
+
+                mw_loc = self.mw_tot[i, step]
+                Tf1_loc = self.Tf1[i, step]
+                for j in group:
+                    gr_p = self.model.ground[j]
+
+                    (
+                        T_borehole_old,
+                        T_ground_old,
+                        T_ground_sup_old,
+                        T_ground_inf_old,
+                        Ts_old,
+                    ) = self.model._get_temperatures(currstate, j)
+
+                    A = build_global_matrix(
+                        self.model,
+                        gr_p,
+                        self.env,
+                        self.timesteps,
+                        mw_loc,
+                    )
+                    A_inv = splu(A)
+
+                    b = build_global_rhs(
+                        self.model,
+                        gr_p,
+                        self.env,
+                        self.timesteps,
+                        T_ground_old,
+                        T_borehole_old,
+                        T_ground_sup_old,
+                        T_ground_inf_old,
+                        Ts_old,
+                        T_ext,
+                        T_sky,
+                        self.T_bc[step, j],
+                        SolarRad,
+                        mw_loc,
+                        Tf1_loc,
+                    )
+
+                    assert np.all(np.isfinite(A.data)), "A contains NaN or Inf"  # type: ignore
+                    assert np.all(np.isfinite(b)), "b contains NaN or Inf"  # type: ignore
+
+                    T_new_i_j = A_inv.solve(b)  # type: ignore
+
+                    assert np.all(np.isfinite(T_new_i_j)), "T_new is not finite"
+
+                    r = A @ T_new_i_j - b
+                    assert np.max(np.abs(r)) < 1e-6
+
+                    Tfout = T_new_i_j[ns + nm + borehole.id_outlet]
+                    qfluid[step, j] = mw_loc * model.fluid.cp_w * (Tf1_loc - Tfout)
+
+                    Tf1_loc = T_new_i_j[ns + nm + (borehole.n_equations - 1)]
+
+                    T_new_step[j, :] = T_new_i_j
+
+            currstate.update(T_new_step)
+            self.T_history[step + 1] = currstate.T_state.copy()
+
+        toc = time.time()
+
+        print(f"running time: {(toc - tic)} seconds")
+
+        return self.T_history

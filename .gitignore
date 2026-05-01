@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.spyproject/
+docs/build/
+.vscode/
+.venv/
+dist/
+*.dist-info/
+.DS_Store
