@@ -23,14 +23,16 @@ with surface boundary conditions.
 
 ## Installation
 
-**Users:**
+Clone the repository and install:
 ```bash
-pip install carm
+git clone https://github.com/BETALAB-team/CaRM.git
+cd CaRM
+pip install .
 ```
 
 **Developers:**
 ```bash
-git clone https://github.com/nome-org/CaRM.git
+git clone https://github.com/BETALAB-team/CaRM.git
 cd CaRM
 pip install -e ".[dev]"
 ```
