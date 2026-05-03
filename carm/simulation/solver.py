@@ -26,8 +26,12 @@ from ..initial_conditions import kusuda_achenbach
 
 from scipy.sparse.linalg import splu
 
+from pathlib import Path
+from datetime import datetime
+
 import time
 import copy
+import pickle
 import numpy as np
 
 
@@ -188,7 +192,7 @@ class Simulation:
             dtype=np.float64,
         )  # dt array: (dt, 2 dt, 3 dt, 4 dt, ...., (n_steps + 1) * dt)
 
-        if len(self.model.ground) > 1:
+        if len(self.model.ground) > 1 and self.model.fieldinput.layout == "irregular":
             self.fls = FiniteLineSolution(
                 physicalmodel=self.model,
                 n_steps=self.n_steps,
@@ -387,7 +391,9 @@ class Simulation:
 
         toc = time.time()
 
-        print(f"running time: {(toc - tic)} seconds")
+        print(f"Simulation loop running time: {(toc - tic)} seconds")
+
+        self._save_results()
 
         return self.T_history
 
@@ -516,6 +522,28 @@ class Simulation:
 
         toc = time.time()
 
-        print(f"running time: {(toc - tic)} seconds")
+        print(f"Simulation loop running time: {(toc - tic)} seconds")
+
+        self._save_results()
 
         return self.T_history
+    
+    def _save_results(self) -> None:
+        to_save = {
+            "T_history": self.T_history,
+            "T_bc": self.T_bc,
+            "rn_list": [self.model.ground[i].rn for i in range(len(self.model.ground))],
+            "n_steps": self.n_steps,
+            "timesteps": self.timesteps,
+        }
+
+        output_dir = Path("results")
+        output_dir.mkdir(exist_ok=True)
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_path = output_dir / f"CaRM_results_{timestamp}.pkl"
+
+        with open(output_path, "wb") as f:
+            pickle.dump(to_save, f)
+
+        print(f"Results saved to {output_path}")

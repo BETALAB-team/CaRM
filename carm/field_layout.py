@@ -43,6 +43,13 @@ class FieldInput:
         ``[]`` until populated via a ``from_*`` method.
     rb: float
         External Borehole radius [m] 
+    layout: str
+        Borehole spacing layout. The layout can be "regular"
+        or "irregular". If regular, the adiabatic condition
+        will be applied at mid-distancce between thoe adjacent
+        boreholes. If irregular, the FLS calculation will be
+        performed to account for penalty temperature at the
+        ground maximum radius. By default it is "regular".
     """
     def __init__(
         self,
@@ -53,6 +60,7 @@ class FieldInput:
         xmax: float,  # max x field coordinate
         ymax: float,  # max y field coordinate
         rb: float, #borehole radius
+        layout: str = "regular",  # regular | irregular spacing layout
     ) -> None:
 
         if (xmin > xmax) or (ymin > ymax):
@@ -65,6 +73,11 @@ class FieldInput:
         self.ymax = ymax
         self.rb = rb
         self._borehole_coordinates: Sequence[tuple[float, float]] = []
+
+        layout = layout.strip().lower()
+        if layout not in {"regular", "irregular"}:
+            raise ValueError("layout must be 'regular' or 'irregular'")
+        self.layout = layout
 
     @property
     def borehole_coordinates(self) -> Sequence[tuple[float, float]]:

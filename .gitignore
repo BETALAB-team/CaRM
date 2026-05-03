@@ -44,3 +44,6 @@ dist/
 *.dist-info/
 .DS_Store
 build/
+
+# Saved simulation results
+results/
