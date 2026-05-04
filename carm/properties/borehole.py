@@ -971,7 +971,7 @@ class Helical(BoreholeProperties):
             raise ValueError("Invalid pipe thickness")
         if rih <= (Dpi1 / 2):
             raise ValueError("Invalid helical geometry: rih must be > r1o")
-        if (rih + Dpi1 / 2) >= self.D0 / 2:
+        if (rih + Dpi2 + 2 * pipe_thick) >= self.D0 / 2:
             raise ValueError("Invalid helical geometry: roh must be < D0/2")
         if Dpi2 <= 0:
             raise ValueError("Dp must be > 0")
