@@ -37,6 +37,10 @@ cd CaRM
 pip install -e ".[dev]"
 ```
 
+## Optional Dependencies
+
+- [CoolProp](http://www.coolprop.org) — for computing fluid thermophysical properties. See [Fluid Properties](docs/source/fluid_properties.rst) for usage.
+
 ## Quick Example
 
 The following example shows a multi-borehole simulation with a single U-tube 
@@ -197,6 +201,11 @@ This library is based on the following works:
 - Cimmino, M. (2018). *pygfunction: an open-source toolbox for the evaluation of 
   thermal response factors for geothermal borehole fields.* 
   Proceedings of eSim 2018, Montréal, Canada, 492–501.
+
+- Bell, I.H., Wronski, J., Quoilin, S., Lemort, V. (2014). *Pure and pseudo-pure fluid
+  thermophysical property evaluation and the open-source thermophysical property library
+  CoolProp.* Industrial & Engineering Chemistry Research, 53(6), 2498–2508.
+  https://doi.org/10.1021/ie4033999
 
 ## License
 

@@ -12,6 +12,7 @@ flow effects.
    about
    quickstart
    discretization
+   fluid_properties
    fls_methods
    output
    modules
