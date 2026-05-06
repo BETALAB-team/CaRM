@@ -156,6 +156,13 @@ class Simulation:
                 "T_ext and SolarRad lengths > n_steps, the first n_steps values are used"
             )
 
+        # to properly build ground rhs term
+        self.adiabatic = False
+        
+        if self.model.fieldinput is not None:
+            if self.model.fieldinput.layout == "regular":
+                self.adiabatic = True
+            
         self.env = ExternalEnvironment(envprops=self.envprops, envinput=self.envinput)
         self.T_sup_kusuda, self.T_middle_kusuda, self.T_inf_kusuda = kusuda_achenbach(
             self.model.ground[0],
@@ -372,6 +379,7 @@ class Simulation:
                     SolarRad,
                     self.mw_tot[j, step],
                     self.Tf1[j, step],
+                    self.adiabatic,
                 )
 
                 assert np.all(np.isfinite(self.A[j].data)), "A contains NaN or Inf"  # type: ignore
@@ -498,6 +506,7 @@ class Simulation:
                         SolarRad,
                         mw_loc,
                         Tf1_loc,
+                        self.adiabatic,
                     )
 
                     assert np.all(np.isfinite(self.A[j].data)), "A contains NaN or Inf"  # type: ignore

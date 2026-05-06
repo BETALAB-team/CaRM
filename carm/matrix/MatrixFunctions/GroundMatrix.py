@@ -186,7 +186,7 @@ def build_coefficient_matrix_ground(gr_p, timesteps):
     return A_ground
 
 
-def build_rhs_ground(gr_p, timesteps, T_old_ground, T_bc):
+def build_rhs_ground(gr_p, timesteps, T_old_ground, T_bc, adiabatic):
 
     b_ground = np.zeros((gr_p.n_mesh * gr_p.m_mesh))
 
@@ -204,8 +204,10 @@ def build_rhs_ground(gr_p, timesteps, T_old_ground, T_bc):
                 b_ground_j[i] = (
                     -(gr_p.C_ground[j, i] / timesteps)
                     * T_old_ground[j * gr_p.n_mesh + i]
-                    - T_bc[j] / gr_p.R_ground[j, -1]
                 )
+
+                if not adiabatic:
+                   b_ground_j[i] -= T_bc[j] / gr_p.R_ground[j, -1]
 
             else:
                 b_ground_j[i] = (

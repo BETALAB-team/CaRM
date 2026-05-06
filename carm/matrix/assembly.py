@@ -200,6 +200,7 @@ def build_global_rhs(
     SolarRad,
     mw_tot_j,
     Tf1_j,
+    adiabatic
 ):
 
     x = env_params.envprops.eps * env_params.boltzmann * np.pi * gr_p.rn**2.0
@@ -207,7 +208,7 @@ def build_global_rhs(
     sky_rad = env_params.envprops.absorptance * SolarRad * np.pi * gr_p.rn**2
 
     b_ground_sup = build_rhs_ground_sup(gr_p, timesteps, T_old_ground_sup)
-    b_ground = build_rhs_ground(gr_p, timesteps, T_old_ground, T_bc)
+    b_ground = build_rhs_ground(gr_p, timesteps, T_old_ground, T_bc, adiabatic)
     b_ground_sup_ground = np.concatenate((b_ground_sup, b_ground))
     b_bhe = build_bhe_rhs(model, gr_p, timesteps, T_old_borehole, mw_tot_j, Tf1_j)
     b_ground_bhe = np.concatenate((b_ground_sup_ground, b_bhe))

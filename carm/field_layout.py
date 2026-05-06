@@ -50,6 +50,9 @@ class FieldInput:
         boreholes. If irregular, the FLS calculation will be
         performed to account for penalty temperature at the
         ground maximum radius. By default it is "regular".
+        It is important that even if regularly spaced, if 
+        series connection is present, the layout must be set
+        as irregular.
     """
     def __init__(
         self,
