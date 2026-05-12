@@ -1,0 +1,35 @@
+name: Build and deploy docs
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  docs:
+    if: contains(github.event.head_commit.message, 'update docs')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install CaRM and docs dependencies
+        run: pip install -e ".[docs]"
+
+      - name: Build HTML docs
+        run: |
+          cd docs
+          make html
+
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs/_build/html
+          publish_branch: gh-pages
