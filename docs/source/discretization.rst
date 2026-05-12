@@ -76,7 +76,8 @@ positions within each node block depend on the BHE type:
      - 6
 
 The offsets ``n_equations - 2`` and ``n_equations - 1`` always point to
-fluid down and fluid up respectively, regardless of BHE type.
+fluid down and fluid up respectively. If the BHE
+is Coaxial or Helical, check which is the inlet pipe to adjust indexes.
 
 Lower layers
 ------------
@@ -96,10 +97,12 @@ single-borehole mode throughout the simulation, so the outer boundary always
 follows the undisturbed seasonal ground temperature cycle rather than a fixed
 value.
 
-In multi-borehole mode the far-field boundary is updated at each timestep by
-the FLS thermal interference model (see :doc:`fls_methods`), which adds the
-inter-borehole temperature perturbation on top of the Kusuda-Achenbach
-baseline.
+In multi-borehole mode (with series connection or irregular spacing) the 
+far-field boundary is updated at each timestep by the FLS thermal interference 
+model (see :doc:`fls_methods`), which adds thevinter-borehole temperature 
+perturbation on top of the Kusuda-Achenbach baseline. If the boreholes are
+regularly spaced and connected in parallel, the adiabatic condition will be 
+used at mid-distance between adjacent boreholes.
 
 .. [Kusuda1965] Kusuda, T., Achenbach, P.R. (1965). *Earth temperature and 
    thermal diffusivity at selected stations in the United States.* 
