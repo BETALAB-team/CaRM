@@ -31,7 +31,7 @@ dev = [
 
 docs = [
     "sphinx",
-    "sphinx-rtd-theme",
+    "sphinxawesome-theme",
 ]
 
 coolprop = [
