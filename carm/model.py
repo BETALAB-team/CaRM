@@ -63,18 +63,12 @@ class PhysicalModel:
     fieldinput: FieldInput | None = None
 
     def __post_init__(self) -> None:
-        segments = self.ground_mesh.segments
         rn = self.ground_geom.rn
 
         if self.fieldinput is None or self.fieldinput.n_bhes == 1:
 
             if rn is None:
                 raise ValueError("Single borehole: rn must be given as input")
-
-            if segments is not None:
-                raise ValueError(
-                    "Single borehole: fls model won't be used, segments must be set as None"
-                )
 
             gr_p = GroundProperties(
                 geom=self.ground_geom,
@@ -88,11 +82,6 @@ class PhysicalModel:
         else:
             if rn is not None:
                 raise ValueError("Multi-borehole: rn must not be defined")
-
-            if segments is None:
-                raise ValueError(
-                    "Multi-borehole: ground segmentation must be provided to use fls model. The minimum is 8"
-                )
 
             self.field = Field(fieldinput=self.fieldinput)
 

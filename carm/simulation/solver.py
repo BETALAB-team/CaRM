@@ -540,6 +540,7 @@ class Simulation:
     def _save_results(self) -> None:
         to_save = {
             "T_history": self.T_history,
+            "T_f1": self.Tf1,
             "T_bc": self.T_bc,
             "rn_list": [self.model.ground[i].rn for i in range(len(self.model.ground))],
             "n_steps": self.n_steps,

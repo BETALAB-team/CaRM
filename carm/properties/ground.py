@@ -75,18 +75,12 @@ class GroundMesh:
     f : float
         Radial expansion factor for the mesh (default 1.2). Controls how
         rapidly cell thickness increases moving outward from the borehole.
-    segments : int or None
-        Number of axial segments for FLS calculation. Required in
-        multi-borehole mode; ``None`` otherwise. Must divide ``m_mesh``.
     """
     n_mesh: int  # radial mesh
     m_mesh: int  # axial mesh middle part
     m_mesh_sup: int  # axial mesh upper part
     m_mesh_inf: int  # axial mesh lower part
     f: float = 1.2  # expansion factor, default is 1.2
-    segments: int | None = (
-        None  # segmenation for fls calulcation, only for MultiBorehole field
-    )
 
     def __post_init__(self) -> None:
         if self.n_mesh < 2:
@@ -95,12 +89,6 @@ class GroundMesh:
             raise ValueError("m_mesh, m_mesh_sup, m_mesh_inf must be > 0")
         if self.f <= 0:
             raise ValueError("f must be > 0")
-        if self.segments is not None:
-            if self.segments <= 0:
-                raise ValueError("segments must be > 0 or None")
-            if self.m_mesh % self.segments != 0:
-                raise ValueError("m_mesh must be a multiple of segments")
-
 
 class GroundProperties:
     """
@@ -170,7 +158,7 @@ class GroundProperties:
         self.m_mesh_sup = self.mesh.m_mesh_sup
         self.m_mesh_inf = self.mesh.m_mesh_inf
         self.f = self.mesh.f
-        self.segments = self.mesh.segments
+
 
         self.r0 = self.geom.r0
         self.rn = self.geom.rn

@@ -50,7 +50,6 @@ def main():
     m_mesh_inf = 40
     L_sup = 1
     L_inf = 10
-    segments = 8
 
     k_w = 0.568709114496803
     rho_w = 1000.1435933169
@@ -80,7 +79,7 @@ def main():
     Tm = 13
 
     dt = 3600
-    n_steps = 276
+    n_steps = 8760#276
 
     # series groups: each group defines an ordered chain of boreholes
     groups = {
@@ -94,7 +93,7 @@ def main():
     # Build model
     # -------------------------------------------------------------------------
 
-    myfield = FieldInput(n_bhes=n_bhes, xmin=x_min, ymin=y_min, xmax=x_max, ymax=y_max, rb = D0 / 2.0)
+    myfield = FieldInput(n_bhes=n_bhes, xmin=x_min, ymin=y_min, xmax=x_max, ymax=y_max, rb = D0 / 2.0, layout = "irregular")
     myfield.from_excel(field_path)
 
     fluid = Fluid(k_w=k_w, rho_w=rho_w, cp_w=cp_w, ni_w=ni_w)
@@ -121,7 +120,6 @@ def main():
         m_mesh=m_mesh,
         m_mesh_sup=m_mesh_sup,
         m_mesh_inf=m_mesh_inf,
-        segments=segments,
     )
 
     env_input = EnvironmentalTimeSeries.from_excel(Tm=Tm, path=path)

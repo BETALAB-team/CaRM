@@ -51,7 +51,6 @@ def main():
     m_mesh_inf = 40
     L_sup = 1
     L_inf = 10
-    segments = 8
 
     k_w = 0.568709114496803
     rho_w = 1000.1435933169
@@ -114,7 +113,6 @@ def main():
         m_mesh=m_mesh,
         m_mesh_sup=m_mesh_sup,
         m_mesh_inf=m_mesh_inf,
-        segments=segments,
     )
 
     env_input = EnvironmentalTimeSeries.from_excel(Tm=Tm, path=path)

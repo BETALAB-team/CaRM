@@ -105,17 +105,7 @@ def test_ground_mesh_invalid_n_mesh():
 def test_ground_mesh_invalid_m_mesh():
     with pytest.raises(ValueError):
         GroundMesh(n_mesh=20, m_mesh=0, m_mesh_sup=4, m_mesh_inf=40)
-
-
-def test_ground_mesh_segments_not_divisor():
-    with pytest.raises(ValueError):
-        GroundMesh(n_mesh=20, m_mesh=40, m_mesh_sup=4, m_mesh_inf=40, segments=3)
-
-
-def test_ground_mesh_segments_valid():
-    mesh = GroundMesh(n_mesh=20, m_mesh=40, m_mesh_sup=4, m_mesh_inf=40, segments=8)
-    assert mesh.segments == 8
-
+        
 
 # ============================================================
 # GroundProperties — shapes
