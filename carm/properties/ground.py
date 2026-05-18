@@ -275,6 +275,11 @@ class GroundProperties:
 
         return k, cp, rho
 
+
+    def update_properties(self):
+        pass
+
+
     def _compute_radius(self) -> None:
         self.radius = np.full(self.n_mesh + 1, self.r0, dtype=np.float64)
 

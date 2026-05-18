@@ -263,6 +263,9 @@ class BoreholeProperties:
         rho_0 = np.asarray(rho_0)[:, None]
 
         return k0, cp_0, rho_0
+    
+    def update_properties(self):
+        pass
 
 
 class Utube(BoreholeProperties):
