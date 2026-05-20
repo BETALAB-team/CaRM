@@ -5,6 +5,7 @@ Environmental conditions module.
 Defines the thermal and radiative properties of the external environment
 used as boundary conditions in the borehole heat exchanger simulation.
 """
+
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -41,6 +42,7 @@ class EnvironmentalProperties:
     tau_shift : float
         Time offset to account for the date of minimum surface temperature [s].
     """
+
     R_ext: float  # W / (K * m2)
     absorptance: float  # -, surface absorptance
     eps: float  # -, surface emittance
@@ -83,10 +85,15 @@ class EnvironmentalTimeSeries:
         External air temperature time series [°C].
     SolarRad : NDArray[np.float64]
         Solar irradiance time series [W/m²].
+    water_input : NDArray[np.float64] | None = None
+        Water input series by irrigation or
+        metherological phenomena [m3 / s].
     """
+
     Tm: float
-    T_ext: NDArray[np.float64] 
-    SolarRad: NDArray[np.float64] 
+    T_ext: NDArray[np.float64]
+    SolarRad: NDArray[np.float64]
+    water_input: NDArray[np.float64] | None = None
 
     @classmethod
     def from_excel(cls, Tm: float, path: Path | str) -> Self:
@@ -111,7 +118,7 @@ class EnvironmentalTimeSeries:
         Raises
         ------
         ValueError
-            If ``T_ext`` or ``SolarRad`` contain non-finite values.
+            If ``T_ext``, ``SolarRad``, or ``water_input`` contain non-finite values.
 
         Examples
         --------
@@ -121,15 +128,30 @@ class EnvironmentalTimeSeries:
         """
         df = pd.read_excel(path)
 
-        if np.all(np.isfinite(df["T_ext"])) and np.all(np.isfinite(df["SolarRad"])):
-            T_ext = np.array(df["T_ext"])
-            SolarRad = np.array(df["SolarRad"])
-        else:
-            raise ValueError("T_ext and SolarRad may contain invalid values")
-        return cls(Tm, T_ext, SolarRad)
+        arrays = {"T_ext": df["T_ext"], "SolarRad": df["SolarRad"]}
+        if "water_input" in df.columns:
+            arrays["water_input"] = df["water_input"]
+
+        invalid = [name for name, arr in arrays.items() if not np.all(np.isfinite(arr))]
+        if invalid:
+            raise ValueError(f"{', '.join(invalid)} may contain invalid values")
+
+        T_ext = np.array(df["T_ext"])
+        SolarRad = np.array(df["SolarRad"])
+        water_input = (
+            np.array(df["water_input"]) if "water_input" in df.columns else None
+        )
+
+        return cls(Tm, T_ext, SolarRad, water_input)
 
     @classmethod
-    def from_array(cls, Tm: float, T_ext: NDArray[np.float64], SolarRad: NDArray[np.float64]) -> Self:
+    def from_array(
+        cls,
+        Tm: float,
+        T_ext: NDArray[np.float64],
+        SolarRad: NDArray[np.float64],
+        water_input: NDArray[np.float64] | None = None,
+    ) -> Self:
         """
         Construct an instance from NumPy arrays.
 
@@ -143,6 +165,9 @@ class EnvironmentalTimeSeries:
             External air temperature time series [°C].
         SolarRad : NDArray[np.float64]
             Solar irradiance time series [W/m²].
+        water_input : NDArray[np.float64] | None = None
+            Water input series by irrigation or
+            metherological phenomena [m3 / s].
 
         Returns
         -------
@@ -152,7 +177,7 @@ class EnvironmentalTimeSeries:
         Raises
         ------
         ValueError
-            If ``T_ext`` or ``SolarRad`` contain non-finite values.
+            If ``T_ext``, ``SolarRad``, or ``water_input`` contain non-finite values.
 
         Examples
         --------
@@ -161,13 +186,15 @@ class EnvironmentalTimeSeries:
         >>> rad = np.abs(np.sin(np.linspace(0, 2 * np.pi, 8760))) * 600
         >>> env = EnvironmentalTimeSeries.from_array(12.0, T, rad)
         """
-        if np.all(np.isfinite(T_ext)) and np.all(np.isfinite(SolarRad)):
-            T_ext = T_ext
-            SolarRad = SolarRad
-        else:
-            raise ValueError("T_ext and SolarRad may contain invalid values")
-        
-        return cls(Tm, T_ext, SolarRad)
+        arrays = {"T_ext": T_ext, "SolarRad": SolarRad}
+        if water_input is not None:
+            arrays["water_input"] = water_input
+
+        invalid = [name for name, arr in arrays.items() if not np.all(np.isfinite(arr))]
+        if invalid:
+            raise ValueError(f"{', '.join(invalid)} may contain invalid values")
+
+        return cls(Tm, T_ext, SolarRad, water_input)
 
 
 @dataclass
@@ -196,6 +223,7 @@ class ExternalEnvironment:
     >>> env.T_sky.shape
     (8760,)
     """
+
     envprops: EnvironmentalProperties
     envinput: EnvironmentalTimeSeries
     T_sky: NDArray[np.float64] = field(init=False)

@@ -6,6 +6,7 @@ Defines the geometry, mesh, and thermophysical properties of the ground
 domain surrounding the borehole. Supports heterogeneous stratification
 via a layer-by-layer property averaging scheme.
 """
+
 from dataclasses import dataclass
 from typing import Sequence
 
@@ -34,6 +35,7 @@ class GroundGeometry:
     r0 : float
         Borehole radius, derived as ``D0 / 2`` [m].
     """
+
     D0: float  # m
     L: float  # m
     L_sup: float  # m
@@ -76,6 +78,7 @@ class GroundMesh:
         Radial expansion factor for the mesh (default 1.2). Controls how
         rapidly cell thickness increases moving outward from the borehole.
     """
+
     n_mesh: int  # radial mesh
     m_mesh: int  # axial mesh middle part
     m_mesh_sup: int  # axial mesh upper part
@@ -89,6 +92,7 @@ class GroundMesh:
             raise ValueError("m_mesh, m_mesh_sup, m_mesh_inf must be > 0")
         if self.f <= 0:
             raise ValueError("f must be > 0")
+
 
 class GroundProperties:
     """
@@ -115,6 +119,8 @@ class GroundProperties:
         Layer-averaged specific heat capacity, shape (n_cells, 1) [J / (kg K)].
     rho : NDArray
         Layer-averaged density, shape (n_cells, 1) [kg/m³].
+    porosity: float
+        Ground avrage porosity [-].
     k_mean : float
         Mean thermal conductivity over the active (middle) region [W / (m K)].
     cp_mean : float
@@ -140,6 +146,7 @@ class GroundProperties:
     C_inf : NDArray
         Axial thermal capacitances in the lower region, shape (m_mesh_inf,) [J/K].
     """
+
     def __init__(
         self,
         *,
@@ -147,6 +154,7 @@ class GroundProperties:
         mesh: GroundMesh,
         Tg: float,
         stratification: Sequence[tuple[float, float, float, float]],
+        porosity: float,
     ) -> None:
 
         self.geom = geom
@@ -159,7 +167,6 @@ class GroundProperties:
         self.m_mesh_inf = self.mesh.m_mesh_inf
         self.f = self.mesh.f
 
-
         self.r0 = self.geom.r0
         self.rn = self.geom.rn
         self.L = self.geom.L
@@ -169,6 +176,7 @@ class GroundProperties:
         # input
         self.stratification = stratification
         self.Tg = Tg
+        self.porosity = porosity
 
         # dz calculation
         self.dz = self.L / self.m_mesh
@@ -275,10 +283,16 @@ class GroundProperties:
 
         return k, cp, rho
 
+    def _update_properties(self, k: float, cp: float, rho: float) -> None:
+        self.k[:, 0] = k
+        self.cp[:, 0] = cp
+        self.rho[:, 0] = rho
 
-    def update_properties(self):
-        pass
-
+        self._capacitance()
+        self._resistance()
+        self._resistance_axial()
+        self._res_cap_sup()
+        self._res_cap_inf()
 
     def _compute_radius(self) -> None:
         self.radius = np.full(self.n_mesh + 1, self.r0, dtype=np.float64)

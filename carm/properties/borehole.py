@@ -77,6 +77,8 @@ class BoreholeThermalProperties:
 
     Attributes
     ----------
+    porosity : float
+        Borehole average porosity [-].
     cp_0 : float | None
         Specific heat capacity [J / (kg K)].
     rho_0 : float | None
@@ -88,7 +90,7 @@ class BoreholeThermalProperties:
         The sum of layer thicknesses must equal the borehole discretized length.
         Stratification is set as None by default.
     """
-
+    porosity: float # - 
     cp_0: float | None = None  # J/kgK
     rho_0: float | None = None  # kg/m3
     k0: float | None = None  # W/mK
@@ -177,6 +179,7 @@ class BoreholeProperties:
         # alias
         self.Lbore = self.geom.Lbore
         self.D0 = self.geom.D0
+        self.porosity = self.thermalprops.porosity
 
         self.m_mesh = self.mesh.m_mesh
 
@@ -263,10 +266,7 @@ class BoreholeProperties:
         rho_0 = np.asarray(rho_0)[:, None]
 
         return k0, cp_0, rho_0
-    
-    def update_properties(self):
-        pass
-
+      
 
 class Utube(BoreholeProperties):
     """
@@ -357,6 +357,21 @@ class Utube(BoreholeProperties):
             / (2 * np.pi * self.dz * self.fluid.k_w)
             * np.log(self.Dpi / (self.Dpi / 100))
         )
+
+    def _update_properties(self, k0: float, cp_0: float, rho_0: float) -> None:
+        self.k0[:, 0] = k0
+        self.cp_0[:, 0] = cp_0
+        self.rho_0[:, 0] = rho_0
+
+        self.C_shell = (
+            self.rho_0 * self.cp_0 * self.dz * self.S_shell
+        )
+        self.C_core = (
+            self.rho_0 * self.cp_0 * self.dz * self.S_core
+        )
+        self._bhe_res_axial()
+
+
 
     def _core_shell_area_u_tube(self) -> None:
         x = (self.Dpi / 2 + self.pipe_thick) / self.pipe_spacing
@@ -450,6 +465,7 @@ class SingleUtube(Utube):
         # calculation
         self.Rp0_dz = self.Rp0 / self.dz
         self.RppB_dz = self.RppB / self.dz
+
 
     def crossing_time_calculation(self, mw_tot: NDArray) -> NDArray:
         """
@@ -797,6 +813,21 @@ class Coaxial(BoreholeProperties):
         # fluid
         self.C_fluid1, self.C_fluid2 = self._fluid_capacitance()
 
+    def update_properties(self, k0: float, cp_0: float, rho_0: float) -> None:
+        self.k0[:, 0] = k0
+        self.cp_0[:, 0] = cp_0
+        self.rho_0[:, 0] = rho_0
+
+        self.R_shell = (
+            1 / (2 * np.pi * self.dz * self.k0) * np.log((self.D0 / 2) / self.r2o)
+        )
+        self.C_shell = (
+            self.rho_0 * self.cp_0 * self.dz * self.S_shell
+        )
+        self._bhe_res_axial()
+
+
+
     def _fluid_capacitance(self) -> tuple[float, float]:
 
         C_fluid1 = self.fluid.rho_w * self.fluid.cp_w * self.dz * np.pi * self.r1i**2
@@ -1112,6 +1143,68 @@ class Helical(BoreholeProperties):
 
         # fluid
         self.C_fluid1, self.C_fluid2 = self._fluid_capacitance()
+
+    def update_properties(self, k0: float, cp_0: float, rho_0: float) -> None:
+        self.k0[:, 0] = k0
+        self.cp_0[:, 0] = cp_0
+        self.rho_0[:, 0] = rho_0
+
+        self.Cgeneric = (
+            self.rho_0
+            * self.cp_0
+            * self.dz
+            * np.pi
+            / 4.0
+            * (self.D0**2 - (self.roh * 2) ** 2)
+        )
+        self.R_shell_middle = (
+            1
+            / (2 * np.pi * self.dz * self.k0)
+            * np.log(self.rshell_middle / self.roh)
+            * self.k_pipe
+            / self.k0
+            * (2 * np.pi * self.roh * self.dz)
+            / (2 * (self.Dpi2 / 2.0 + self.pipe_thick) * self.Lp2)
+        )
+        self.C_shell_middle = self.Cgeneric * self.capshellcoeff
+        self.R_shell = (
+            1
+            / (2 * np.pi * self.dz * self.k0)
+            * np.log((self.D0 / 2) / self.rshell_middle)
+        )
+        self.C_shell = self.Cgeneric * (1 - self.capshellcoeff)
+        self.R_core1 = (
+            1 / (2 * np.pi * self.dz * self.k0) * np.log(self.rcore / self.r1o)
+        )
+        self.R_core2 = (
+            1
+            / (2 * np.pi * self.dz * self.k0)
+            * np.log(self.rih / self.rcore)
+            * self.k_pipe
+            / self.k0
+            * (2 * np.pi * self.rih * self.dz)
+            / (2.0 * (self.Dpi2 / 2 + self.pipe_thick) * self.Lp2)
+        ) 
+        self.R_core_shell_middle = (
+            1
+            / (2 * np.pi * self.P * self.k0)
+            * np.log(self.rshell_middle / self.rcore)
+            * 1
+            / (1 + self.dz / self.P)
+        )
+        self.R_core_shell = (
+            1
+            / (2 * np.pi * self.P * self.k0)
+            * np.log((self.D0 / 2.0) / self.rcore)
+            * 1
+            / (1 + self.dz / self.P)
+        )
+        self.C_core = (
+            self.rho_0 * self.cp_0 * self.dz * self.S_core
+        ) 
+        self._bhe_res_axial()
+
+
 
     def _fluid_capacitance(self) -> tuple[float, float]:
 

@@ -1,3 +1,4 @@
+from .soil_moisture import SoilMoisture
 from .ground import GroundProperties, GroundGeometry, GroundMesh
 from .borehole import (
     BoreholeProperties,
@@ -11,6 +12,7 @@ from .borehole import (
 )
 
 __all__ = [
+    "SoilMoisture",
     "GroundProperties",
     "GroundGeometry",
     "GroundMesh",
