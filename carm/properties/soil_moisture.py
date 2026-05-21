@@ -17,7 +17,7 @@ class SoilMoisture:
 
     Computes ground and borehole thermophysical properties (thermal conductivity,
     specific heat capacity, density) as a function of volumetric water content,
-    using empirical pedotransfer functions based on Zarrella et al.
+    using empirical correlations.
 
     Attributes
     ----------
