@@ -56,7 +56,13 @@ class SoilMoisture:
     rho_conv = 16.01846  # lb / ft**3 -> kg / m**3
     loss_factor = 0.1
     w_latent = 2250000.0
+    SOIL_PARAMS = {
+    "sand": {"b1": 0.228, "b2": 2.406, "b3": 4.909, "theta_s": 0.417, "theta_r": 0.020},
+    "loam": {"b1": 0.310, "b2": 1.534, "b3": 3.222, "theta_s": 0.434, "theta_r": 0.027},
+    "clay": {"b1": 0.197, "b2": 0.962, "b3": 2.521, "theta_s": 0.385, "theta_r": 0.090},
+}
 
+    
     def __init__(
         self,
         *,
@@ -85,6 +91,9 @@ class SoilMoisture:
         V: float,
         A: float,
         q: float,
+        soil_type: str,
+        xs: float, #volume fraction of soil matter
+        x0: float, #volume fraction of organic matter
     ) -> Tuple[float, float, float]:
         """
         Compute thermophysical properties from water content at a given timestep.
@@ -116,6 +125,17 @@ class SoilMoisture:
         If the computed water content falls below 7%, dry soil properties
         are returned directly.
         """
+        if soil_type not in list(self.SOIL_PARAMS.keys()):
+            raise ValueError("Soil  type must match one between Clay, Loam, and Sand soil types.")
+        
+        b1_loc = self.SOIL_PARAMS[soil_type]["b1"]
+        b2_loc = self.SOIL_PARAMS[soil_type]["b2"]
+        b3_loc = self.SOIL_PARAMS[soil_type]["b3"]
+        theta_s_loc = self.SOIL_PARAMS[soil_type]["theta_s"]
+        theta_r_loc = self.SOIL_PARAMS[soil_type]["theta_r"]
+
+        fk = lambda b1, b2, b3, wr: b1 + b2 * wr + b3 * wr ** 0.5
+        fc = lambda xs, x0, wr: 1.92 * 10**6 * xs + 2.51 * 10**6 * x0 + 4.18 * 10**6 * wr
 
         self.Wvol_loss = self.Wvol_prev * self.loss_factor
         self.Wvol_evap = ((q * timesteps) / self.w_latent) / 1000.0
@@ -146,6 +166,9 @@ class SoilMoisture:
                 )
                 / 12.0
             ) * self.k_conv
+
+            #print(f"step={step} W_content={self.W_content:.3f} k={self.k:.4f} k_dry={self.k_dry:.4f} rho_dry_imp={self.rho_dry/self.rho_conv:.2f}")
+
             self.cp = (
                 (
                     self.W_content * 1.0
