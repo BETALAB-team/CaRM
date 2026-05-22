@@ -37,13 +37,15 @@ class PhysicalModel:
         Borehole heat exchanger type and its geometric parameters.
     fluid : Fluid
         Thermophysical properties of the heat carrier fluid.
-    porosity: float
-        Ground avrage porosity [-].
     Tg : float
         Undisturbed ground temperature [°C].
     stratification : Sequence[tuple[float, float, float, float]]
         Ground layer stratification as a sequence of
         ``(z_top, z_bot, k, rho_cp)`` tuples.
+    soil_type: str
+        Soil type string. This is set as None by default. If accounting for
+        time variable properties, it must be set as 'sand', 'loam', or 'clay' 
+        and the correct properties must be given as input.
     ground : list[GroundProperties]
         One ``GroundProperties`` instance per borehole, populated at
         construction time.
@@ -58,9 +60,9 @@ class PhysicalModel:
     borehole: SingleUtube | DoubleUtube | Helical | Coaxial
     fluid: Fluid
 
-    porosity: float
     Tg: float
     stratification: Sequence[tuple[float, float, float, float]]
+    soil_type: str | None = None
 
     ground: list = field(default_factory=list, init=False)
     fieldinput: FieldInput | None = None
@@ -78,7 +80,7 @@ class PhysicalModel:
                 mesh=self.ground_mesh,
                 Tg=self.Tg,
                 stratification=self.stratification,
-                porosity=self.porosity,
+                soil_type=self.soil_type
             )
 
             self.ground.append(gr_p)
@@ -105,7 +107,7 @@ class PhysicalModel:
                     mesh=self.ground_mesh,
                     Tg=self.Tg,
                     stratification=self.stratification,
-                    porosity=self.porosity,
+                    soil_type=self.soil_type
                 )
 
                 self.ground.append(gr_p)

@@ -113,14 +113,16 @@ class GroundProperties:
     stratification : Sequence[tuple[float, float, float, float]]
         Ground layering as a sequence of ``(k, cp, rho, thickness)`` tuples.
         The sum of layer thicknesses must equal the total discretized length.
+    soil_type: str
+        Soil type string. This is set as None by default. If accounting for
+        time variable properties, it must be set as 'sand', 'loam', or 'clay' 
+        and the correct properties must be given as input.
     k : NDArray
         Layer-averaged thermal conductivity, shape (n_cells, 1) [W / (m K)].
     cp : NDArray
         Layer-averaged specific heat capacity, shape (n_cells, 1) [J / (kg K)].
     rho : NDArray
         Layer-averaged density, shape (n_cells, 1) [kg/m³].
-    porosity: float
-        Ground avrage porosity [-].
     k_mean : float
         Mean thermal conductivity over the active (middle) region [W / (m K)].
     cp_mean : float
@@ -154,7 +156,7 @@ class GroundProperties:
         mesh: GroundMesh,
         Tg: float,
         stratification: Sequence[tuple[float, float, float, float]],
-        porosity: float,
+        soil_type: str | None = None,
     ) -> None:
 
         self.geom = geom
@@ -176,7 +178,12 @@ class GroundProperties:
         # input
         self.stratification = stratification
         self.Tg = Tg
-        self.porosity = porosity
+
+        if soil_type is not None:
+            soil_type = soil_type.strip().lower()
+            if soil_type not in {"sand", "loam", "clay"}:
+                raise ValueError("If soil_type is not None it must be set as 'sand', 'loam', or 'clay'.")
+        self.soil_type = soil_type
 
         # dz calculation
         self.dz = self.L / self.m_mesh

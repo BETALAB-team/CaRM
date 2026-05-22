@@ -68,7 +68,7 @@ class BoreholeMesh:
             raise ValueError("Invalid axial mesh, m_mesh must be > 0")
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass
 class BoreholeThermalProperties:
     """
     Thermal properties of the borehole filling material (grout).
@@ -77,8 +77,6 @@ class BoreholeThermalProperties:
 
     Attributes
     ----------
-    porosity : float
-        Borehole average porosity [-].
     cp_0 : float | None
         Specific heat capacity [J / (kg K)].
     rho_0 : float | None
@@ -89,12 +87,16 @@ class BoreholeThermalProperties:
         Grout layering as a sequence of ``(k, cp, rho, thickness)`` tuples.
         The sum of layer thicknesses must equal the borehole discretized length.
         Stratification is set as None by default.
+    soil_type: str
+        Soil type string. This is set as None by default. If accounting for
+        time variable properties, it must be set as 'sand', 'loam', or 'clay' 
+        and the correct properties must be given as input.
     """
-    porosity: float # - 
     cp_0: float | None = None  # J/kgK
     rho_0: float | None = None  # kg/m3
     k0: float | None = None  # W/mK
     stratification: Sequence[tuple[float, float, float, float]] | None = None
+    soil_type: str | None = None,
 
     def __post_init__(self) -> None:
         if self.stratification is None and (
@@ -120,6 +122,12 @@ class BoreholeThermalProperties:
         
         if self.stratification is not None and not all(min(layer) > 0 for layer in self.stratification):
             raise ValueError("Invalid borehole properties, k0, cp_0, rho_0, and thicnkess must be > 0.")
+        
+        if self.soil_type is not None:
+            self.soil_type = self.soil_type.strip().lower()
+            if self.soil_type not in {"sand", "loam", "clay"}:
+                raise ValueError("If soil_type is not None it must be set as 'sand', 'loam', or 'clay'.")
+
 
 
 class BoreholeProperties:
@@ -179,7 +187,7 @@ class BoreholeProperties:
         # alias
         self.Lbore = self.geom.Lbore
         self.D0 = self.geom.D0
-        self.porosity = self.thermalprops.porosity
+        self.soil_type = self.thermalprops.soil_type
 
         self.m_mesh = self.mesh.m_mesh
 
