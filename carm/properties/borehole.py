@@ -821,7 +821,7 @@ class Coaxial(BoreholeProperties):
         # fluid
         self.C_fluid1, self.C_fluid2 = self._fluid_capacitance()
 
-    def update_properties(self, k0: float, cp_0: float, rho_0: float) -> None:
+    def _update_properties(self, k0: float, cp_0: float, rho_0: float) -> None:
         self.k0[:, 0] = k0
         self.cp_0[:, 0] = cp_0
         self.rho_0[:, 0] = rho_0
@@ -1152,7 +1152,7 @@ class Helical(BoreholeProperties):
         # fluid
         self.C_fluid1, self.C_fluid2 = self._fluid_capacitance()
 
-    def update_properties(self, k0: float, cp_0: float, rho_0: float) -> None:
+    def _update_properties(self, k0: float, cp_0: float, rho_0: float) -> None:
         self.k0[:, 0] = k0
         self.cp_0[:, 0] = cp_0
         self.rho_0[:, 0] = rho_0
