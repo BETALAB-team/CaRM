@@ -302,17 +302,6 @@ shape (n_steps, m_mesh_inf) [°C].</p>
 </dl>
 </dd></dl>
 <dl class="py attribute">
-<dt class="sig sig-object py" id="carm.simulation.solver.Simulation.gr_p_varprops">
-<span class="sig-name descname"><span class="pre">gr_p_varprops</span></span></dt>
-<dd><p>Soil moisture module for ground thermophysical properties.
-Instantiated only if <code class="docutils literal notranslate"><span class="pre">envinput.water_input</span></code> is not <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="carm.properties.html#carm.properties.soil_moisture.SoilMoisture" title="carm.properties.soil_moisture.SoilMoisture">SoilMoisture</a> or None</p>
-</dd>
-</dl>
-</dd></dl>
-<dl class="py attribute">
 <dt class="sig sig-object py" id="carm.simulation.solver.Simulation.bh_p_varprops">
 <span class="sig-name descname"><span class="pre">bh_p_varprops</span></span></dt>
 <dd><p>Soil moisture module for borehole thermophysical properties.
@@ -320,39 +309,6 @@ Instantiated only if <code class="docutils literal notranslate"><span class="pre
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="carm.properties.html#carm.properties.soil_moisture.SoilMoisture" title="carm.properties.soil_moisture.SoilMoisture">SoilMoisture</a> or None</p>
-</dd>
-</dl>
-</dd></dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="carm.simulation.solver.Simulation.k_ground_history">
-<span class="sig-name descname"><span class="pre">k_ground_history</span></span></dt>
-<dd><p>Thermal conductivity history for the ground, shape (n_steps, n_bhes) [W/(m K)].
-Available only if <code class="docutils literal notranslate"><span class="pre">envinput.water_input</span></code> is not <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>NDArray[np.float64]</p>
-</dd>
-</dl>
-</dd></dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="carm.simulation.solver.Simulation.cp_ground_history">
-<span class="sig-name descname"><span class="pre">cp_ground_history</span></span></dt>
-<dd><p>Volumetric heat capacity history for the ground, shape (n_steps, n_bhes) [J/(m³ K)].
-Available only if <code class="docutils literal notranslate"><span class="pre">envinput.water_input</span></code> is not <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>NDArray[np.float64]</p>
-</dd>
-</dl>
-</dd></dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="carm.simulation.solver.Simulation.rho_ground_history">
-<span class="sig-name descname"><span class="pre">rho_ground_history</span></span></dt>
-<dd><p>Density history for the ground, shape (n_steps, n_bhes) [kg/m³].
-Available only if <code class="docutils literal notranslate"><span class="pre">envinput.water_input</span></code> is not <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>NDArray[np.float64]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -382,17 +338,6 @@ Available only if <code class="docutils literal notranslate"><span class="pre">e
 <dt class="sig sig-object py" id="carm.simulation.solver.Simulation.rho_borehole_history">
 <span class="sig-name descname"><span class="pre">rho_borehole_history</span></span></dt>
 <dd><p>Density history for the borehole, shape (n_steps, n_bhes) [kg/m³].
-Available only if <code class="docutils literal notranslate"><span class="pre">envinput.water_input</span></code> is not <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>NDArray[np.float64]</p>
-</dd>
-</dl>
-</dd></dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="carm.simulation.solver.Simulation.wc_history_ground">
-<span class="sig-name descname"><span class="pre">wc_history_ground</span></span></dt>
-<dd><p>Residual water volume history for the ground, shape (n_steps, n_bhes) [m³].
 Available only if <code class="docutils literal notranslate"><span class="pre">envinput.water_input</span></code> is not <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -706,17 +651,6 @@ shape (n_steps, m_mesh_inf) [°C].</p>
 </dl>
 </dd></dl>
 <dl class="py attribute">
-<dt class="sig sig-object py" id="carm.simulation.Simulation.gr_p_varprops">
-<span class="sig-name descname"><span class="pre">gr_p_varprops</span></span></dt>
-<dd><p>Soil moisture module for ground thermophysical properties.
-Instantiated only if <code class="docutils literal notranslate"><span class="pre">envinput.water_input</span></code> is not <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="carm.properties.html#carm.properties.soil_moisture.SoilMoisture" title="carm.properties.soil_moisture.SoilMoisture">SoilMoisture</a> or None</p>
-</dd>
-</dl>
-</dd></dl>
-<dl class="py attribute">
 <dt class="sig sig-object py" id="carm.simulation.Simulation.bh_p_varprops">
 <span class="sig-name descname"><span class="pre">bh_p_varprops</span></span></dt>
 <dd><p>Soil moisture module for borehole thermophysical properties.
@@ -724,39 +658,6 @@ Instantiated only if <code class="docutils literal notranslate"><span class="pre
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="carm.properties.html#carm.properties.soil_moisture.SoilMoisture" title="carm.properties.soil_moisture.SoilMoisture">SoilMoisture</a> or None</p>
-</dd>
-</dl>
-</dd></dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="carm.simulation.Simulation.k_ground_history">
-<span class="sig-name descname"><span class="pre">k_ground_history</span></span></dt>
-<dd><p>Thermal conductivity history for the ground, shape (n_steps, n_bhes) [W/(m K)].
-Available only if <code class="docutils literal notranslate"><span class="pre">envinput.water_input</span></code> is not <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>NDArray[np.float64]</p>
-</dd>
-</dl>
-</dd></dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="carm.simulation.Simulation.cp_ground_history">
-<span class="sig-name descname"><span class="pre">cp_ground_history</span></span></dt>
-<dd><p>Volumetric heat capacity history for the ground, shape (n_steps, n_bhes) [J/(m³ K)].
-Available only if <code class="docutils literal notranslate"><span class="pre">envinput.water_input</span></code> is not <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>NDArray[np.float64]</p>
-</dd>
-</dl>
-</dd></dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="carm.simulation.Simulation.rho_ground_history">
-<span class="sig-name descname"><span class="pre">rho_ground_history</span></span></dt>
-<dd><p>Density history for the ground, shape (n_steps, n_bhes) [kg/m³].
-Available only if <code class="docutils literal notranslate"><span class="pre">envinput.water_input</span></code> is not <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>NDArray[np.float64]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -786,17 +687,6 @@ Available only if <code class="docutils literal notranslate"><span class="pre">e
 <dt class="sig sig-object py" id="carm.simulation.Simulation.rho_borehole_history">
 <span class="sig-name descname"><span class="pre">rho_borehole_history</span></span></dt>
 <dd><p>Density history for the borehole, shape (n_steps, n_bhes) [kg/m³].
-Available only if <code class="docutils literal notranslate"><span class="pre">envinput.water_input</span></code> is not <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>NDArray[np.float64]</p>
-</dd>
-</dl>
-</dd></dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="carm.simulation.Simulation.wc_history_ground">
-<span class="sig-name descname"><span class="pre">wc_history_ground</span></span></dt>
-<dd><p>Residual water volume history for the ground, shape (n_steps, n_bhes) [m³].
 Available only if <code class="docutils literal notranslate"><span class="pre">envinput.water_input</span></code> is not <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -947,15 +837,10 @@ provided flags. For single-borehole configurations, <code class="docutils litera
 <li><a :data-current="activeSection === '#carm.simulation.solver.Simulation.T_bc'" class="reference internal" href="#carm.simulation.solver.Simulation.T_bc"><code class="docutils literal notranslate"><span class="pre">Simulation.T_bc</span></code></a></li>
 <li><a :data-current="activeSection === '#carm.simulation.solver.Simulation.T_history'" class="reference internal" href="#carm.simulation.solver.Simulation.T_history"><code class="docutils literal notranslate"><span class="pre">Simulation.T_history</span></code></a></li>
 <li><a :data-current="activeSection === '#carm.simulation.solver.Simulation.fls'" class="reference internal" href="#carm.simulation.solver.Simulation.fls"><code class="docutils literal notranslate"><span class="pre">Simulation.fls</span></code></a></li>
-<li><a :data-current="activeSection === '#carm.simulation.solver.Simulation.gr_p_varprops'" class="reference internal" href="#carm.simulation.solver.Simulation.gr_p_varprops"><code class="docutils literal notranslate"><span class="pre">Simulation.gr_p_varprops</span></code></a></li>
 <li><a :data-current="activeSection === '#carm.simulation.solver.Simulation.bh_p_varprops'" class="reference internal" href="#carm.simulation.solver.Simulation.bh_p_varprops"><code class="docutils literal notranslate"><span class="pre">Simulation.bh_p_varprops</span></code></a></li>
-<li><a :data-current="activeSection === '#carm.simulation.solver.Simulation.k_ground_history'" class="reference internal" href="#carm.simulation.solver.Simulation.k_ground_history"><code class="docutils literal notranslate"><span class="pre">Simulation.k_ground_history</span></code></a></li>
-<li><a :data-current="activeSection === '#carm.simulation.solver.Simulation.cp_ground_history'" class="reference internal" href="#carm.simulation.solver.Simulation.cp_ground_history"><code class="docutils literal notranslate"><span class="pre">Simulation.cp_ground_history</span></code></a></li>
-<li><a :data-current="activeSection === '#carm.simulation.solver.Simulation.rho_ground_history'" class="reference internal" href="#carm.simulation.solver.Simulation.rho_ground_history"><code class="docutils literal notranslate"><span class="pre">Simulation.rho_ground_history</span></code></a></li>
 <li><a :data-current="activeSection === '#carm.simulation.solver.Simulation.k_borehole_history'" class="reference internal" href="#carm.simulation.solver.Simulation.k_borehole_history"><code class="docutils literal notranslate"><span class="pre">Simulation.k_borehole_history</span></code></a></li>
 <li><a :data-current="activeSection === '#carm.simulation.solver.Simulation.cp_borehole_history'" class="reference internal" href="#carm.simulation.solver.Simulation.cp_borehole_history"><code class="docutils literal notranslate"><span class="pre">Simulation.cp_borehole_history</span></code></a></li>
 <li><a :data-current="activeSection === '#carm.simulation.solver.Simulation.rho_borehole_history'" class="reference internal" href="#carm.simulation.solver.Simulation.rho_borehole_history"><code class="docutils literal notranslate"><span class="pre">Simulation.rho_borehole_history</span></code></a></li>
-<li><a :data-current="activeSection === '#carm.simulation.solver.Simulation.wc_history_ground'" class="reference internal" href="#carm.simulation.solver.Simulation.wc_history_ground"><code class="docutils literal notranslate"><span class="pre">Simulation.wc_history_ground</span></code></a></li>
 <li><a :data-current="activeSection === '#carm.simulation.solver.Simulation.wc_history_borehole'" class="reference internal" href="#carm.simulation.solver.Simulation.wc_history_borehole"><code class="docutils literal notranslate"><span class="pre">Simulation.wc_history_borehole</span></code></a></li>
 <li><a :data-current="activeSection === '#id0'" class="reference internal" href="#id0"><code class="docutils literal notranslate"><span class="pre">Simulation.model</span></code></a></li>
 <li><a :data-current="activeSection === '#id1'" class="reference internal" href="#id1"><code class="docutils literal notranslate"><span class="pre">Simulation.envprops</span></code></a></li>
@@ -999,15 +884,10 @@ provided flags. For single-borehole configurations, <code class="docutils litera
 <li><a :data-current="activeSection === '#carm.simulation.Simulation.T_bc'" class="reference internal" href="#carm.simulation.Simulation.T_bc"><code class="docutils literal notranslate"><span class="pre">Simulation.T_bc</span></code></a></li>
 <li><a :data-current="activeSection === '#carm.simulation.Simulation.T_history'" class="reference internal" href="#carm.simulation.Simulation.T_history"><code class="docutils literal notranslate"><span class="pre">Simulation.T_history</span></code></a></li>
 <li><a :data-current="activeSection === '#carm.simulation.Simulation.fls'" class="reference internal" href="#carm.simulation.Simulation.fls"><code class="docutils literal notranslate"><span class="pre">Simulation.fls</span></code></a></li>
-<li><a :data-current="activeSection === '#carm.simulation.Simulation.gr_p_varprops'" class="reference internal" href="#carm.simulation.Simulation.gr_p_varprops"><code class="docutils literal notranslate"><span class="pre">Simulation.gr_p_varprops</span></code></a></li>
 <li><a :data-current="activeSection === '#carm.simulation.Simulation.bh_p_varprops'" class="reference internal" href="#carm.simulation.Simulation.bh_p_varprops"><code class="docutils literal notranslate"><span class="pre">Simulation.bh_p_varprops</span></code></a></li>
-<li><a :data-current="activeSection === '#carm.simulation.Simulation.k_ground_history'" class="reference internal" href="#carm.simulation.Simulation.k_ground_history"><code class="docutils literal notranslate"><span class="pre">Simulation.k_ground_history</span></code></a></li>
-<li><a :data-current="activeSection === '#carm.simulation.Simulation.cp_ground_history'" class="reference internal" href="#carm.simulation.Simulation.cp_ground_history"><code class="docutils literal notranslate"><span class="pre">Simulation.cp_ground_history</span></code></a></li>
-<li><a :data-current="activeSection === '#carm.simulation.Simulation.rho_ground_history'" class="reference internal" href="#carm.simulation.Simulation.rho_ground_history"><code class="docutils literal notranslate"><span class="pre">Simulation.rho_ground_history</span></code></a></li>
 <li><a :data-current="activeSection === '#carm.simulation.Simulation.k_borehole_history'" class="reference internal" href="#carm.simulation.Simulation.k_borehole_history"><code class="docutils literal notranslate"><span class="pre">Simulation.k_borehole_history</span></code></a></li>
 <li><a :data-current="activeSection === '#carm.simulation.Simulation.cp_borehole_history'" class="reference internal" href="#carm.simulation.Simulation.cp_borehole_history"><code class="docutils literal notranslate"><span class="pre">Simulation.cp_borehole_history</span></code></a></li>
 <li><a :data-current="activeSection === '#carm.simulation.Simulation.rho_borehole_history'" class="reference internal" href="#carm.simulation.Simulation.rho_borehole_history"><code class="docutils literal notranslate"><span class="pre">Simulation.rho_borehole_history</span></code></a></li>
-<li><a :data-current="activeSection === '#carm.simulation.Simulation.wc_history_ground'" class="reference internal" href="#carm.simulation.Simulation.wc_history_ground"><code class="docutils literal notranslate"><span class="pre">Simulation.wc_history_ground</span></code></a></li>
 <li><a :data-current="activeSection === '#carm.simulation.Simulation.wc_history_borehole'" class="reference internal" href="#carm.simulation.Simulation.wc_history_borehole"><code class="docutils literal notranslate"><span class="pre">Simulation.wc_history_borehole</span></code></a></li>
 <li><a :data-current="activeSection === '#id16'" class="reference internal" href="#id16"><code class="docutils literal notranslate"><span class="pre">Simulation.model</span></code></a></li>
 <li><a :data-current="activeSection === '#id17'" class="reference internal" href="#id17"><code class="docutils literal notranslate"><span class="pre">Simulation.envprops</span></code></a></li>
