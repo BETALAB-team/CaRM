@@ -10,7 +10,7 @@ import numpy as np
 from scipy.sparse import coo_matrix
 
 
-def build_coefficient_matrix_ground(gr_p, timesteps):
+def build_coefficient_matrix_ground(gr_p, timesteps, adiabatic):
     m = gr_p.m_mesh
     n = gr_p.n_mesh
     N = m * n
@@ -43,12 +43,15 @@ def build_coefficient_matrix_ground(gr_p, timesteps):
                 elif i == (n - 1):
                     rows.append(k)
                     columns.append(k)
-                    data.append(
-                        -1 / (gr_p.R_ground[j, i + 1])
-                        - 1 / (gr_p.R_ground[j, i])
+                    
+                    diag = (
+                        -1 / gr_p.R_ground[j, i]
                         - gr_p.C_ground[j, i] / timesteps
                         - 1 / (0.5 * gr_p.R_axial[j + 1, i] + 0.5 * gr_p.R_axial[j, i])
                     )
+                    if not adiabatic:
+                        diag -= 1 / gr_p.R_ground[j, i + 1]
+                    data.append(diag)
 
                     rows.append(k)
                     columns.append(k - 1)
@@ -90,15 +93,18 @@ def build_coefficient_matrix_ground(gr_p, timesteps):
                     rows.append(k)
                     columns.append(k + 1)
                     data.append(1 / (gr_p.R_ground[j, i + 1]))
-                elif i == (gr_p.n_mesh - 1):
+                elif i == (n - 1):
                     rows.append(k)
                     columns.append(k)
-                    data.append(
-                        -1 / (gr_p.R_ground[j, i + 1])
-                        - 1 / (gr_p.R_ground[j, i])
+
+                    diag = (
+                        -1 / gr_p.R_ground[j, i]
                         - gr_p.C_ground[j, i] / timesteps
                         - 1 / (0.5 * gr_p.R_axial[j - 1, i] + 0.5 * gr_p.R_axial[j, i])
                     )
+                    if not adiabatic:
+                        diag -= 1 / gr_p.R_ground[j, i + 1]
+                    data.append(diag)
 
                     rows.append(k)
                     columns.append(k - 1)
@@ -147,16 +153,19 @@ def build_coefficient_matrix_ground(gr_p, timesteps):
                     rows.append(k)
                     columns.append(k + 1)
                     data.append(1 / (gr_p.R_ground[j, i + 1]))
-                elif i == (gr_p.n_mesh - 1):
+                elif i == (n - 1):
                     rows.append(k)
                     columns.append(k)
-                    data.append(
-                        -1 / (gr_p.R_ground[j, i + 1])
-                        - 1 / (gr_p.R_ground[j, i])
+                    
+                    diag = (
+                        -1 / gr_p.R_ground[j, i]
                         - gr_p.C_ground[j, i] / timesteps
                         - 1 / (0.5 * gr_p.R_axial[j, i] + 0.5 * gr_p.R_axial[j - 1, i])
                         - 1 / (0.5 * gr_p.R_axial[j, i] + 0.5 * gr_p.R_axial[j + 1, i])
                     )
+                    if not adiabatic:
+                        diag -= 1 / gr_p.R_ground[j, i + 1]
+                    data.append(diag)
 
                     rows.append(k)
                     columns.append(k - 1)

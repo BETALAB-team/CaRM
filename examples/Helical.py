@@ -58,7 +58,7 @@ def main():
     N = 8
     supply_and_return = "1_2"
     P = 1.5
-    Lp2tot = 12
+    Lp2tot = N * np.sqrt(P**2 + np. pi * (rih + Dpi1 / 2.0 + pipe_thick)**2)
 
     absorptance = 0.7
     eps = 0.95

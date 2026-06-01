@@ -6,6 +6,7 @@ Defines the geometry, mesh, and thermophysical properties of the ground
 domain surrounding the borehole. Supports heterogeneous stratification
 via a layer-by-layer property averaging scheme.
 """
+
 from dataclasses import dataclass
 from typing import Sequence
 
@@ -34,6 +35,7 @@ class GroundGeometry:
     r0 : float
         Borehole radius, derived as ``D0 / 2`` [m].
     """
+
     D0: float  # m
     L: float  # m
     L_sup: float  # m
@@ -76,6 +78,7 @@ class GroundMesh:
         Radial expansion factor for the mesh (default 1.2). Controls how
         rapidly cell thickness increases moving outward from the borehole.
     """
+
     n_mesh: int  # radial mesh
     m_mesh: int  # axial mesh middle part
     m_mesh_sup: int  # axial mesh upper part
@@ -89,6 +92,7 @@ class GroundMesh:
             raise ValueError("m_mesh, m_mesh_sup, m_mesh_inf must be > 0")
         if self.f <= 0:
             raise ValueError("f must be > 0")
+
 
 class GroundProperties:
     """
@@ -140,6 +144,7 @@ class GroundProperties:
     C_inf : NDArray
         Axial thermal capacitances in the lower region, shape (m_mesh_inf,) [J/K].
     """
+
     def __init__(
         self,
         *,
@@ -158,7 +163,6 @@ class GroundProperties:
         self.m_mesh_sup = self.mesh.m_mesh_sup
         self.m_mesh_inf = self.mesh.m_mesh_inf
         self.f = self.mesh.f
-
 
         self.r0 = self.geom.r0
         self.rn = self.geom.rn

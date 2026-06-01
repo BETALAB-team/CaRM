@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Simulation module.
+Time-stepping orchestrator for the BHE simulation.
 
-Orchestrates the time-stepping loop for the BHE simulation, assembling
-the global system matrix, advancing the thermal state, and computing
-far-field interference via the FLS model. Supports both parallel and
-series borehole configurations.
+Assembles all physical inputs, initializes the FLS model and boundary
+conditions, and runs the simulation via ``run()``. Supports parallel
+(independent boreholes) and series (fluid outlet of one borehole feeds
+the next) configurations.
 """
 
 from dataclasses import dataclass, field
@@ -23,6 +23,7 @@ from ..model import PhysicalModel
 from ..state import State
 from ..thermal_interference import FiniteLineSolution
 from ..initial_conditions import kusuda_achenbach
+from ..properties import SoilMoisture
 
 from scipy.sparse.linalg import splu
 
@@ -63,7 +64,7 @@ class Simulation:
     Tf1 : NDArray[np.float64]
         Inlet fluid temperature time series, shape (n_bhes, n_steps) or
         (n_groups, n_steps) [°C].
-        When mw is 0 this values must be set as NaN.
+        When mw is 0 this value must be set as NaN.
 
         Example
         -------
@@ -72,9 +73,8 @@ class Simulation:
         >>> Tf1 = np.concatenate((Tf1_5, Tf1_null), axis = 1)
 
     fls_mode : str
-        Fls simulation mode, it accepts only sqrt and continuous mode.
-        The first one is less expensive while the latter is more accurate.
-        See the proper section to understand the comparison.
+        FLS simulation mode. Accepts ``'sqrt'`` or ``'continuous'``.
+        The first is less expensive; the latter is more accurate.
     groups : dict or None
         Series groups mapping group index to ordered list of borehole indices.
         Required for series mode, ``None`` in parallel mode.
@@ -95,6 +95,36 @@ class Simulation:
         Output temperature history, shape (n_steps + 1, n_bhes, n_dof) [°C].
     fls : FiniteLineSolution or None
         FLS thermal interference model. ``None`` in single-borehole mode.
+    gr_p_varprops : SoilMoisture or None
+        Soil moisture module for ground thermophysical properties.
+        Instantiated only if ``envinput.water_input`` is not ``None``.
+    bh_p_varprops : SoilMoisture or None
+        Soil moisture module for borehole thermophysical properties.
+        Instantiated only if ``envinput.water_input`` is not ``None``.
+    k_ground_history : NDArray[np.float64]
+        Thermal conductivity history for the ground, shape (n_steps, n_bhes) [W/(m K)].
+        Available only if ``envinput.water_input`` is not ``None``.
+    cp_ground_history : NDArray[np.float64]
+        Volumetric heat capacity history for the ground, shape (n_steps, n_bhes) [J/(m³ K)].
+        Available only if ``envinput.water_input`` is not ``None``.
+    rho_ground_history : NDArray[np.float64]
+        Density history for the ground, shape (n_steps, n_bhes) [kg/m³].
+        Available only if ``envinput.water_input`` is not ``None``.
+    k_borehole_history : NDArray[np.float64]
+        Thermal conductivity history for the borehole, shape (n_steps, n_bhes) [W/(m K)].
+        Available only if ``envinput.water_input`` is not ``None``.
+    cp_borehole_history : NDArray[np.float64]
+        Volumetric heat capacity history for the borehole, shape (n_steps, n_bhes) [J/(m³ K)].
+        Available only if ``envinput.water_input`` is not ``None``.
+    rho_borehole_history : NDArray[np.float64]
+        Density history for the borehole, shape (n_steps, n_bhes) [kg/m³].
+        Available only if ``envinput.water_input`` is not ``None``.
+    wc_history_ground : NDArray[np.float64]
+        Residual water volume history for the ground, shape (n_steps, n_bhes) [m³].
+        Available only if ``envinput.water_input`` is not ``None``.
+    wc_history_borehole : NDArray[np.float64]
+        Residual water volume history for the borehole, shape (n_steps, n_bhes) [m³].
+        Available only if ``envinput.water_input`` is not ``None``.
     """
 
     model: PhysicalModel
@@ -103,7 +133,12 @@ class Simulation:
     timesteps: float
     n_steps: int
     mw_tot: NDArray[np.float64]  # shape: (n_bhes, n_steps) | (n_groups, n_steps)
-    Tf1: NDArray[np.float64]  # shape: (n_bhes, n_steps) | (n_groups, n_steps))
+    Tf1: NDArray[np.float64] | None = (
+        None  # shape: (n_bhes, n_steps) | (n_groups, n_steps))
+    )
+    heat_flux: bool = False
+    Q_buildings: NDArray[np.float64] | None = None
+    T_supply: NDArray[np.float64] | None = None
     fls_mode: str = "sqrt"  # "sqrt" | "continuous"
     groups: Dict | None = None
     T_sup_kusuda: NDArray[np.float64] = field(init=False)
@@ -115,38 +150,81 @@ class Simulation:
     fls: FiniteLineSolution | None = field(default=None, init=False)
 
     def __post_init__(self):
-        if self.model.fieldinput is None:
-            if (self.mw_tot.shape[1] != self.n_steps) or (
-                self.Tf1.shape[1] != self.n_steps
-            ):
-                raise ValueError("mw_tot and Tf1 time series must have n_steps")
-        else:
-            if self.groups is not None:
-                if self.mw_tot.shape != (
-                    len(self.groups),
-                    self.n_steps,
-                ) or self.Tf1.shape != (len(self.groups), self.n_steps):
+        # Tf1 calculation mode and field input check
+        if self.heat_flux:
+            if (self.T_supply is None) or (self.Q_buildings is None):
+                raise ValueError(
+                    "When heat_flux is set as 'True', Q_building and T_supply must be given as input."
+                )
+            if self.Tf1 is not None:
+                raise ValueError(
+                    "When heat_flux is set as 'True', Tf1 must be set as None."
+                )
+            if self.model.fieldinput is None:
+                if (len(self.Q_buildings) != self.n_steps) or (
+                    len(self.T_supply) != self.n_steps
+                    or (self.mw_tot.shape[1] != self.n_steps)
+                ):
                     raise ValueError(
-                        "mw_tot and Tf1 time series must have n_bhes rows and n_steps columns"
+                        "Q_buildings, T_supply, and mw time series must have n_steps"
                     )
-
             else:
-                if self.mw_tot.shape != (
-                    self.model.fieldinput.n_bhes,
-                    self.n_steps,
-                ) or self.Tf1.shape != (self.model.fieldinput.n_bhes, self.n_steps):
-                    raise ValueError(
-                        "mw_tot and Tf1 time series must have n_bhes rows and n_steps columns"
-                    )
+                if self.groups is not None:
+                    if self.mw_tot.shape != (len(self.groups), self.n_steps):
+                        raise ValueError(
+                            "mw_tot time series must have n_bhes rows and n_steps columns"
+                        )
 
+                else:
+                    if self.mw_tot.shape != (
+                        self.model.fieldinput.n_bhes,
+                        self.n_steps,
+                    ):
+                        raise ValueError(
+                            "mw_tot time series must have n_bhes rows and n_steps columns"
+                        )
+
+        else:
+            if (self.T_supply is not None) or (self.Q_buildings is not None):
+                raise ValueError(
+                    "When heat_flux is set as 'False', Q_building and T_supply must be set as None."
+                )
+            if self.Tf1 is None:
+                raise ValueError(
+                    "When heat_flux is set as 'False', Tf1 must be given as input."
+                )
+
+            if self.model.fieldinput is None:
+                if (self.mw_tot.shape[1] != self.n_steps) or (
+                    self.Tf1.shape[1] != self.n_steps
+                ):
+                    raise ValueError("mw_tot and Tf1 time series must have n_steps")
+            else:
+                if self.groups is not None:
+                    if self.mw_tot.shape != (
+                        len(self.groups),
+                        self.n_steps,
+                    ) or self.Tf1.shape != (len(self.groups), self.n_steps):
+                        raise ValueError(
+                            "mw_tot and Tf1 time series must have n_bhes rows and n_steps columns"
+                        )
+
+                else:
+                    if self.mw_tot.shape != (
+                        self.model.fieldinput.n_bhes,
+                        self.n_steps,
+                    ) or self.Tf1.shape != (self.model.fieldinput.n_bhes, self.n_steps):
+                        raise ValueError(
+                            "mw_tot and Tf1 time series must have n_bhes rows and n_steps columns"
+                        )
+
+        # environmental input check
         if (
             len(self.envinput.T_ext) < self.n_steps
             or len(self.envinput.SolarRad) < self.n_steps
         ):
-            raise ValueError("T_ext and SolarRad time series must non exceed n_steps")
-        if len(self.envinput.T_ext) != len(self.envinput.SolarRad):
             raise ValueError(
-                "T_ext and SolarRad time series must have the same number of elements"
+                "T_ext and SolarRad time series have less than n_steps values"
             )
         if (
             len(self.envinput.T_ext) > self.n_steps
@@ -156,13 +234,32 @@ class Simulation:
                 "T_ext and SolarRad lengths > n_steps, the first n_steps values are used"
             )
 
+        if self.envinput.water_input is not None:
+            water_input = self.envinput.water_input
+            if len(water_input) < self.n_steps:
+                raise ValueError("water_input time series has less than n_steps values")
+
+            self.bh_p_varprops = SoilMoisture(
+                water_input=water_input,
+                rho_dry=np.mean(self.model.borehole.rho_0),
+                soil_type=self.model.borehole.soil_type,
+            )
+
+            self.k_borehole_history = np.empty(
+                (self.n_steps, len(self.model.ground)), dtype=np.float64
+            )
+            self.cp_borehole_history = copy.deepcopy(self.k_borehole_history)
+            self.rho_borehole_history = copy.deepcopy(self.k_borehole_history)
+
+            self.wc_history_borehole = copy.deepcopy(self.k_borehole_history)
+
         # to properly build ground rhs term
         self.adiabatic = False
-        
+
         if self.model.fieldinput is not None:
             if self.model.fieldinput.layout == "regular":
                 self.adiabatic = True
-            
+
         self.env = ExternalEnvironment(envprops=self.envprops, envinput=self.envinput)
         self.T_sup_kusuda, self.T_middle_kusuda, self.T_inf_kusuda = kusuda_achenbach(
             self.model.ground[0],
@@ -344,6 +441,22 @@ class Simulation:
                 )
 
             for j, gr_p in enumerate(model.ground):
+                properties_changed = False
+
+                if self.envinput.water_input is not None:
+                    tol = 1e-3
+                    k_bh, cp_bh, rho_bh = self._props_calculation(
+                        step=step, borehole=borehole, j=j
+                    )
+
+                    if (
+                        (abs(np.mean(borehole.k0) - k_bh) > tol)
+                        or (abs(np.mean(borehole.cp_0) - cp_bh) > tol)
+                        or (abs(np.mean(borehole.rho_0) - rho_bh) > tol)
+                    ):
+
+                        properties_changed = True
+                        borehole._update_properties(k_bh, cp_bh, rho_bh)
 
                 (
                     T_borehole_old,
@@ -353,13 +466,18 @@ class Simulation:
                     Ts_old,
                 ) = self.model._get_temperatures(currstate, j)
 
-                if step == 0 or (self.mw_tot[j, step] != self.mw_tot[j, step - 1]):
+                if (
+                    step == 0
+                    or (self.mw_tot[j, step] != self.mw_tot[j, step - 1])
+                    or (properties_changed == True)
+                ):
                     self.A[j] = build_global_matrix(
                         self.model,
                         gr_p,
                         self.env,
                         self.timesteps,
                         self.mw_tot[j, step],
+                        self.adiabatic,
                     )
                     self.A_inv[j] = splu(self.A[j])
 
@@ -476,6 +594,25 @@ class Simulation:
                 for j in group:
                     gr_p = self.model.ground[j]
 
+                    properties_changed = False
+
+                    if self.envinput.water_input is not None:
+                        tol = 1e-3
+                        k_bh, cp_bh, rho_bh = (
+                            self._props_calculation(
+                                step=step, borehole=borehole, j=j
+                            )
+                        )
+
+                        if (
+                            (abs(np.mean(borehole.k0) - k_bh) > tol)
+                            or (abs(np.mean(borehole.cp_0) - cp_bh) > tol)
+                            or (abs(np.mean(borehole.rho_0) - rho_bh) > tol)
+                        ):
+
+                            properties_changed = True
+                            borehole._update_properties(k_bh, cp_bh, rho_bh)
+
                     (
                         T_borehole_old,
                         T_ground_old,
@@ -484,7 +621,11 @@ class Simulation:
                         Ts_old,
                     ) = self.model._get_temperatures(currstate, j)
 
-                    if step == 0 or mw_loc != self.mw_tot[i, step - 1]:
+                    if (
+                        (step == 0)
+                        or (mw_loc != self.mw_tot[i, step - 1])
+                        or (properties_changed == True)
+                    ):
                         self.A[j] = build_global_matrix(
                             self.model, gr_p, self.env, self.timesteps, mw_loc
                         )
@@ -536,7 +677,25 @@ class Simulation:
         self._save_results()
 
         return self.T_history
-    
+
+    def _props_calculation(self, step: int, borehole, j):
+
+        k_bh, cp_bh, rho_bh = self.bh_p_varprops._properties_calculation(
+            step=step,
+            timesteps=self.timesteps,
+            V=np.pi * (borehole.D0**2) * borehole.Lbore,
+            A=np.pi * (borehole.D0**2) / 4.0,
+            q=self.q_nbhes[step, j],
+        )
+
+        self.k_borehole_history[step, j] = k_bh
+        self.cp_borehole_history[step, j] = cp_bh
+        self.rho_borehole_history[step, j] = rho_bh
+
+        self.wc_history_borehole[step, j] = self.bh_p_varprops.Wvol_r
+
+        return k_bh, cp_bh, rho_bh
+
     def _save_results(self) -> None:
         to_save = {
             "T_history": self.T_history,
@@ -546,6 +705,12 @@ class Simulation:
             "n_steps": self.n_steps,
             "timesteps": self.timesteps,
         }
+
+        if self.envinput.water_input is not None:
+            to_save["k_borehole"] = self.k_borehole_history
+            to_save["cp_borehole"] = self.cp_borehole_history
+            to_save["rho_borehole"] = self.rho_borehole_history
+            to_save["water_content_borehole"] = self.wc_history_borehole
 
         output_dir = Path("results")
         output_dir.mkdir(exist_ok=True)

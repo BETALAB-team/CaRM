@@ -19,7 +19,7 @@ from .MatrixFunctions import (
 from .BheMatrix import build_bhe_matrix, build_bhe_rhs
 
 
-def build_global_matrix(model, gr_p, env_params, timesteps, mw_tot_j):
+def build_global_matrix(model, gr_p, env_params, timesteps, mw_tot_j, adiabatic):
 
     bh_p = model.borehole
 
@@ -28,7 +28,7 @@ def build_global_matrix(model, gr_p, env_params, timesteps, mw_tot_j):
         env_params,
         timesteps,
     )
-    A_ground = build_coefficient_matrix_ground(gr_p, timesteps)
+    A_ground = build_coefficient_matrix_ground(gr_p, timesteps, adiabatic)
     A_bhe = build_bhe_matrix(model, gr_p, timesteps, mw_tot_j)
     A_ground_inf = build_coefficient_matrix_ground_inf(gr_p, timesteps)
 
