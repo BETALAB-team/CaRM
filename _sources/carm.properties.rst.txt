@@ -20,6 +20,14 @@ carm.properties.ground module
    :show-inheritance:
    :undoc-members:
 
+carm.properties.soil\_moisture module
+--------------------------------------
+
+.. automodule:: carm.properties.soil_moisture
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 Module contents
 ---------------
 
