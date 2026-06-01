@@ -133,7 +133,7 @@ class SoilMoisture:
         k : float
             Thermal conductivity [W/(m K)].
         cp : float
-            Volumetric heat capacity [J/(m³ K)].
+            Volumetric heat capacity [J/(kg K)].
         rho : float
             Density [kg/m³].
         """
@@ -159,8 +159,9 @@ class SoilMoisture:
 
         self.W_content = self.Wvol_r / V
 
-        self.k = f_k(self.b1_loc, self.b2_loc, self.b3_loc, self.W_content)
-        self.cp = f_cp(self.xs_loc, self.x0_loc, self.W_content)
         self.rho = f_rho(self.W_content, self.w_rho, self.rho_dry)
+        self.k = f_k(self.b1_loc, self.b2_loc, self.b3_loc, self.W_content)
+        self.cp = f_cp(self.xs_loc, self.x0_loc, self.W_content) / self.rho
+        
 
         return self.k, self.cp, self.rho
