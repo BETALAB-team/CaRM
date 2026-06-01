@@ -2,7 +2,7 @@
 Soil mositure module.
 
 Empirical equations are here implemented to account for water content
-in porous means. This module provides insights on ground and borehole
+in porous means. This module provides insights on borehole
 proprieties variability against water content.
 """
 
@@ -15,7 +15,7 @@ class SoilMoisture:
     """
     Soil moisture and thermophysical properties module.
 
-    Computes ground and borehole thermophysical properties (thermal conductivity,
+    Computes borehole thermophysical properties (thermal conductivity,
     specific heat capacity, density) as a function of volumetric water content,
     using Chung-Horton (1987) for thermal conductivity, de Vries (1963) for
     volumetric heat capacity, and a mass-weighted average for density.

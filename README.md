@@ -128,6 +128,13 @@ This library is based on the following works:
   CoolProp.* Industrial & Engineering Chemistry Research, 53(6), 2498–2508.
   https://doi.org/10.1021/ie4033999
 
+- Chung, S.O., Horton, R. (1987). *Soil heat and water flow with a partial surface 
+  mulch.* Water Resources Research, 23(12), 2175–2186.
+  https://doi.org/10.1029/WR023i012p02175
+
+- de Vries, D.A. (1963). *Thermal properties of soils.* In W.R. van Wijk (Ed.), 
+  Physics of Plant Environment. North-Holland Publishing Company, Amsterdam.
+
 ## License
 
 MIT License — see [LICENSE](LICENSE) for details.
