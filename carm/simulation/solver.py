@@ -95,21 +95,9 @@ class Simulation:
         Output temperature history, shape (n_steps + 1, n_bhes, n_dof) [°C].
     fls : FiniteLineSolution or None
         FLS thermal interference model. ``None`` in single-borehole mode.
-    gr_p_varprops : SoilMoisture or None
-        Soil moisture module for ground thermophysical properties.
-        Instantiated only if ``envinput.water_input`` is not ``None``.
     bh_p_varprops : SoilMoisture or None
         Soil moisture module for borehole thermophysical properties.
         Instantiated only if ``envinput.water_input`` is not ``None``.
-    k_ground_history : NDArray[np.float64]
-        Thermal conductivity history for the ground, shape (n_steps, n_bhes) [W/(m K)].
-        Available only if ``envinput.water_input`` is not ``None``.
-    cp_ground_history : NDArray[np.float64]
-        Volumetric heat capacity history for the ground, shape (n_steps, n_bhes) [J/(m³ K)].
-        Available only if ``envinput.water_input`` is not ``None``.
-    rho_ground_history : NDArray[np.float64]
-        Density history for the ground, shape (n_steps, n_bhes) [kg/m³].
-        Available only if ``envinput.water_input`` is not ``None``.
     k_borehole_history : NDArray[np.float64]
         Thermal conductivity history for the borehole, shape (n_steps, n_bhes) [W/(m K)].
         Available only if ``envinput.water_input`` is not ``None``.
@@ -118,9 +106,6 @@ class Simulation:
         Available only if ``envinput.water_input`` is not ``None``.
     rho_borehole_history : NDArray[np.float64]
         Density history for the borehole, shape (n_steps, n_bhes) [kg/m³].
-        Available only if ``envinput.water_input`` is not ``None``.
-    wc_history_ground : NDArray[np.float64]
-        Residual water volume history for the ground, shape (n_steps, n_bhes) [m³].
         Available only if ``envinput.water_input`` is not ``None``.
     wc_history_borehole : NDArray[np.float64]
         Residual water volume history for the borehole, shape (n_steps, n_bhes) [m³].
