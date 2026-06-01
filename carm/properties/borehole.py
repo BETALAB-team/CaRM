@@ -96,7 +96,7 @@ class BoreholeThermalProperties:
     rho_0: float | None = None  # kg/m3
     k0: float | None = None  # W/mK
     stratification: Sequence[tuple[float, float, float, float]] | None = None
-    soil_type: str | None = None,
+    soil_type: str | None = None
 
     def __post_init__(self) -> None:
         if self.stratification is None and (
