@@ -95,9 +95,21 @@ class Simulation:
         Output temperature history, shape (n_steps + 1, n_bhes, n_dof) [°C].
     fls : FiniteLineSolution or None
         FLS thermal interference model. ``None`` in single-borehole mode.
+    gr_p_varprops : SoilMoisture or None
+        Soil moisture module for ground thermophysical properties.
+        Instantiated only if ``envinput.water_input`` is not ``None``.
     bh_p_varprops : SoilMoisture or None
         Soil moisture module for borehole thermophysical properties.
         Instantiated only if ``envinput.water_input`` is not ``None``.
+    k_ground_history : NDArray[np.float64]
+        Thermal conductivity history for the ground, shape (n_steps, n_bhes) [W/(m K)].
+        Available only if ``envinput.water_input`` is not ``None``.
+    cp_ground_history : NDArray[np.float64]
+        Volumetric heat capacity history for the ground, shape (n_steps, n_bhes) [J/(m³ K)].
+        Available only if ``envinput.water_input`` is not ``None``.
+    rho_ground_history : NDArray[np.float64]
+        Density history for the ground, shape (n_steps, n_bhes) [kg/m³].
+        Available only if ``envinput.water_input`` is not ``None``.
     k_borehole_history : NDArray[np.float64]
         Thermal conductivity history for the borehole, shape (n_steps, n_bhes) [W/(m K)].
         Available only if ``envinput.water_input`` is not ``None``.
@@ -106,6 +118,9 @@ class Simulation:
         Available only if ``envinput.water_input`` is not ``None``.
     rho_borehole_history : NDArray[np.float64]
         Density history for the borehole, shape (n_steps, n_bhes) [kg/m³].
+        Available only if ``envinput.water_input`` is not ``None``.
+    wc_history_ground : NDArray[np.float64]
+        Residual water volume history for the ground, shape (n_steps, n_bhes) [m³].
         Available only if ``envinput.water_input`` is not ``None``.
     wc_history_borehole : NDArray[np.float64]
         Residual water volume history for the borehole, shape (n_steps, n_bhes) [m³].
@@ -394,6 +409,20 @@ class Simulation:
         self.A = [0] * n  # type: ignore
         self.A_inv = copy.deepcopy(self.A)  # type: ignore
 
+        if self.heat_flux:
+            f_COP = lambda dT: 10.29 - 0.21 * dT + 0.0012 * dT**2.0
+            self.Tf1 = np.zeros((n, self.n_steps), dtype=np.float64)
+            self.Tf1[:, 0] = self.T_history[0, :, ns + nm + borehole.id_inlet]
+
+            self.COP = np.full(self.n_steps, np.nan, dtype=np.float64)
+            self.EER = copy.deepcopy(self.COP)
+            self.Q_ground = np.full(self.n_steps, np.nan, dtype=np.float64)
+
+        maxerr = 10  # W
+        Niter = 200  # -
+
+        properties_changed = False
+
         for step in range(self.n_steps):
             # external environment aliasing
             T_ext = self.envinput.T_ext[step]
@@ -412,49 +441,14 @@ class Simulation:
 
             T_new_step = np.zeros((n, (ns + nm + nb + ninf)))
 
-            if step != 0:
-                qfluid = (
-                    self.mw_tot[:, step]
-                    * model.fluid.cp_w
-                    * (self.Tf1[:, step] - Tfout)
-                )
-                self.q_nbhes[step] = qfluid
-
-            if self.fls is not None:
-                self.T_bc[step] = self.T_bc[step] + self.fls._compute_delta_t(
-                    q_nbhes=self.q_nbhes, step=step
-                )
+            T_bc_base = self.T_bc[step].copy()
 
             for j, gr_p in enumerate(model.ground):
-                properties_changed = False
-
-                if self.envinput.water_input is not None:
-                    tol = 1e-3
-                    k_bh, cp_bh, rho_bh = self._props_calculation(
-                        step=step, borehole=borehole, j=j
-                    )
-
-                    if (
-                        (abs(np.mean(borehole.k0) - k_bh) > tol)
-                        or (abs(np.mean(borehole.cp_0) - cp_bh) > tol)
-                        or (abs(np.mean(borehole.rho_0) - rho_bh) > tol)
-                    ):
-
-                        properties_changed = True
-                        borehole._update_properties(k_bh, cp_bh, rho_bh)
-
-                (
-                    T_borehole_old,
-                    T_ground_old,
-                    T_ground_sup_old,
-                    T_ground_inf_old,
-                    Ts_old,
-                ) = self.model._get_temperatures(currstate, j)
 
                 if (
                     step == 0
                     or (self.mw_tot[j, step] != self.mw_tot[j, step - 1])
-                    or (properties_changed == True)
+                    or properties_changed
                 ):
                     self.A[j] = build_global_matrix(
                         self.model,
@@ -466,38 +460,127 @@ class Simulation:
                     )
                     self.A_inv[j] = splu(self.A[j])
 
-                self.b = build_global_rhs(
-                    self.model,
-                    gr_p,
-                    self.env,
-                    self.timesteps,
-                    T_ground_old,
-                    T_borehole_old,
-                    T_ground_sup_old,
-                    T_ground_inf_old,
-                    Ts_old,
-                    T_ext,
-                    T_sky,
-                    self.T_bc[step, j],
-                    SolarRad,
-                    self.mw_tot[j, step],
-                    self.Tf1[j, step],
-                    self.adiabatic,
+            Tfout_iter = np.mean(Tfout)
+
+            if self.heat_flux and step != 0 and self.Q_buildings[step] != 0:
+
+                Tfout_iter = np.sum(self.mw_tot[:, step] * Tfout) / np.sum(self.mw_tot[:, step])
+
+                if self.Q_buildings[step] > 0:
+
+                    self.COP[step] = f_COP(self.T_supply[step] - Tfout_iter)
+                    self.Q_ground[step] = - self.Q_buildings[step] * (
+                        1 - 1 / self.COP[step]
+                    )
+
+                elif self.Q_buildings[step] < 0:
+
+                    self.EER[step] = f_COP(Tfout_iter - self.T_supply[step])
+                    self.Q_ground[step] = - self.Q_buildings[step] * (
+                        1 + 1 / self.EER[step]
+                    )
+
+            err = np.inf
+            it = 0
+
+            while err > maxerr and it < Niter:
+
+                if self.heat_flux and step != 0 and self.Q_buildings[step] != 0:
+                    self.Tf1[:, step] = Tfout_iter + self.Q_ground[step] / (
+                        np.sum(self.mw_tot[:, step]) * self.model.fluid.cp_w
+                    )
+
+                if step != 0:
+                    qfluid = (
+                        self.mw_tot[:, step]
+                        * model.fluid.cp_w
+                        * (self.Tf1[:, step] - Tfout)
+                    )
+                    self.q_nbhes[step] = qfluid
+
+                if self.fls is not None:
+                    self.T_bc[step] = T_bc_base + self.fls._compute_delta_t(
+                        q_nbhes=self.q_nbhes, step=step
+                    )
+
+                for j, gr_p in enumerate(model.ground):
+
+                    (
+                        T_borehole_old,
+                        T_ground_old,
+                        T_ground_sup_old,
+                        T_ground_inf_old,
+                        Ts_old,
+                    ) = self.model._get_temperatures(currstate, j, use_old=True)
+
+                    self.b = build_global_rhs(
+                        self.model,
+                        gr_p,
+                        self.env,
+                        self.timesteps,
+                        T_ground_old,
+                        T_borehole_old,
+                        T_ground_sup_old,
+                        T_ground_inf_old,
+                        Ts_old,
+                        T_ext,
+                        T_sky,
+                        self.T_bc[step, j],
+                        SolarRad,
+                        self.mw_tot[j, step],
+                        self.Tf1[j, step],
+                        self.adiabatic,
+                    )
+
+                    assert np.all(np.isfinite(self.A[j].data)), "A contains NaN or Inf"  # type: ignore
+                    assert np.all(np.isfinite(self.b)), "b contains NaN or Inf"  # type: ignore
+
+                    T_new_j = self.A_inv[j].solve(self.b)  # type: ignore
+
+                    assert np.all(np.isfinite(T_new_j)), "T_new is not finite"
+
+                    r = self.A[j] @ T_new_j - self.b
+                    assert np.max(np.abs(r)) < 1e-6
+
+                    T_new_step[j, :] = T_new_j
+
+                currstate.update(T_new_step)
+
+                if self.heat_flux and step != 0 and self.Q_buildings[step] != 0:
+                    Tfout = currstate.T_state[:, ns + nm + borehole.id_outlet]
+                    Tfout_iter = np.sum(self.mw_tot[:, step] * Tfout) / np.sum(self.mw_tot[:, step])
+                    q_liv = (
+                        np.sum(self.mw_tot[:, step])
+                        * self.model.fluid.cp_w
+                        * (Tfout_iter - np.mean(self.Tf1[:, step]))
+                    )
+                    err = abs(self.Q_ground[step] - (-q_liv))
+                    it += 1
+
+                else:
+                    err = 0.0
+                    break
+
+            if self.heat_flux:
+                print(
+                    f"step {step:5d} | it {it:3d} | EER {self.EER[step]:7.3f} | COP {self.COP[step]:7.3f} | Q_ground {self.Q_ground[step]:10.1f} | Tf1 {np.mean(self.Tf1[:, step]):7.2f} | Tfout {Tfout_iter:7.2f} | err {err:8.2f}"
                 )
 
-                assert np.all(np.isfinite(self.A[j].data)), "A contains NaN or Inf"  # type: ignore
-                assert np.all(np.isfinite(self.b)), "b contains NaN or Inf"  # type: ignore
+            properties_changed = False
+            if self.envinput.water_input is not None and step != 0:
+                tol = 1e-3
+                for j in range(n):
+                    k_bh, cp_bh, rho_bh = self._props_calculation(
+                        step=step, borehole=borehole, j=j
+                    )
+                    if (
+                        abs(np.mean(borehole.k0) - k_bh) > tol
+                        or abs(np.mean(borehole.cp_0) - cp_bh) > tol
+                        or abs(np.mean(borehole.rho_0) - rho_bh) > tol
+                    ):
+                        properties_changed = True
+                        borehole._update_properties(k_bh, cp_bh, rho_bh)
 
-                T_new_j = self.A_inv[j].solve(self.b)  # type: ignore
-
-                assert np.all(np.isfinite(T_new_j)), "T_new is not finite"
-
-                r = self.A[j] @ T_new_j - self.b
-                assert np.max(np.abs(r)) < 1e-6
-
-                T_new_step[j, :] = T_new_j
-
-            currstate.update(T_new_step)
             self.T_history[step + 1] = currstate.T_state.copy()
 
         toc = time.time()
@@ -583,10 +666,8 @@ class Simulation:
 
                     if self.envinput.water_input is not None:
                         tol = 1e-3
-                        k_bh, cp_bh, rho_bh = (
-                            self._props_calculation(
-                                step=step, borehole=borehole, j=j
-                            )
+                        k_bh, cp_bh, rho_bh = self._props_calculation(
+                            step=step, borehole=borehole, j=j
                         )
 
                         if (
