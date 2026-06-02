@@ -668,7 +668,7 @@ class Simulation:
         k_bh, cp_bh, rho_bh = self.bh_p_varprops._properties_calculation(
             step=step,
             timesteps=self.timesteps,
-            V=np.pi * (borehole.D0**2) * borehole.Lbore,
+            V=np.pi * (borehole.D0**2) / 4.0 * borehole.Lbore,
             A=np.pi * (borehole.D0**2) / 4.0,
             q=self.q_nbhes[step, j],
         )
