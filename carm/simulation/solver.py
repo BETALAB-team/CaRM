@@ -418,6 +418,8 @@ class Simulation:
             self.EER = copy.deepcopy(self.COP)
             self.Q_ground = np.full(self.n_steps, np.nan, dtype=np.float64)
 
+            self.abs_err = np.full(self.n_steps, np.nan, dtype=np.float64)
+
         maxerr = 10  # W
         Niter = 200  # -
 
@@ -557,6 +559,8 @@ class Simulation:
                     err = abs(self.Q_ground[step] - (-q_liv))
                     it += 1
 
+                    self.abs_err[step] = err
+
                 else:
                     err = 0.0
                     break
@@ -564,6 +568,12 @@ class Simulation:
             if self.heat_flux:
                 print(
                     f"step {step:5d} | it {it:3d} | EER {self.EER[step]:7.3f} | COP {self.COP[step]:7.3f} | Q_ground {self.Q_ground[step]:10.1f} | Tf1 {np.mean(self.Tf1[:, step]):7.2f} | Tfout {Tfout_iter:7.2f} | err {err:8.2f}"
+                )
+
+            if self.heat_flux and step != 0:
+                Tfout_fin = currstate.T_state[:, ns + nm + borehole.id_outlet]
+                self.q_nbhes[step] = (
+                    self.mw_tot[:, step] * model.fluid.cp_w * (self.Tf1[:, step] - Tfout_fin)
                 )
 
             properties_changed = False
@@ -777,6 +787,13 @@ class Simulation:
             to_save["cp_borehole"] = self.cp_borehole_history
             to_save["rho_borehole"] = self.rho_borehole_history
             to_save["water_content_borehole"] = self.wc_history_borehole
+
+        if self.heat_flux:
+            to_save["COP"] = self.COP
+            to_save["EER"] = self.EER
+            to_save["Q_ground"] = self.Q_ground
+            to_save["Q_buildings"] = self.Q_buildings
+            to_save["abs_err"] = self.abs_err
 
         output_dir = Path("results")
         output_dir.mkdir(exist_ok=True)
