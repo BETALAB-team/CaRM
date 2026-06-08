@@ -423,8 +423,6 @@ class Simulation:
         maxerr = 10  # W
         Niter = 200  # -
 
-        properties_changed = False
-
         for step in range(self.n_steps):
             # external environment aliasing
             T_ext = self.envinput.T_ext[step]
@@ -433,18 +431,37 @@ class Simulation:
 
             currstate.save_old()
 
+            # borehole properties are updated according to the following condition
+            properties_changed = False
+            if self.envinput.water_input is not None and step != 0:
+                tol = 1e-3
+                for j in range(n):
+                    k_bh, cp_bh, rho_bh = self._props_calculation(
+                        step=step, borehole=borehole, j=j
+                    )
+                    if (
+                        abs(np.mean(borehole.k0) - k_bh) > tol
+                        or abs(np.mean(borehole.cp_0) - cp_bh) > tol
+                        or abs(np.mean(borehole.rho_0) - rho_bh) > tol
+                    ):
+                        properties_changed = True
+                        borehole._update_properties(k_bh, cp_bh, rho_bh)
+
+            # Tf1 is updated according to simulated values for boreholes in off-status
             idx_null = np.where(self.mw_tot[:, step] == 0)[0]
             if len(idx_null) > 0:
                 self.Tf1[idx_null, step] = currstate.T_old[
                     idx_null, ns + nm + (borehole.id_inlet)
                 ]
 
+            # Tfout and boundary condition are extracted and copied before entering in Picard cycle
             Tfout = currstate.T_old[:, ns + nm + borehole.id_outlet]
 
             T_new_step = np.zeros((n, (ns + nm + nb + ninf)))
 
             T_bc_base = self.T_bc[step].copy()
 
+            # coefficient matrix is built for each borehole
             for j, gr_p in enumerate(model.ground):
 
                 if (
@@ -464,9 +481,10 @@ class Simulation:
 
             Tfout_iter = np.mean(Tfout)
 
+            # COP, EER and Qground values are calculated before entering in Picard loop if heat_flux mode is True
             if self.heat_flux and step != 0 and self.Q_buildings[step] != 0:
 
-                Tfout_iter = np.sum(self.mw_tot[:, step] * Tfout) / np.sum(self.mw_tot[:, step])
+                Tfout_iter = np.sum(self.mw_tot[:, step] * Tfout) / np.sum(self.mw_tot[:, step]) # Temperature weighted average according to mass flow
 
                 if self.Q_buildings[step] > 0:
 
@@ -485,6 +503,7 @@ class Simulation:
             err = np.inf
             it = 0
 
+            # Picard iteration to calculate Tfout untile 200 iterations are reached or Qground (from COP / EER) - q_liv (m*cp*dT) < 10 W 
             while err > maxerr and it < Niter:
 
                 if self.heat_flux and step != 0 and self.Q_buildings[step] != 0:
@@ -500,6 +519,7 @@ class Simulation:
                     )
                     self.q_nbhes[step] = qfluid
 
+                # Boundary condition is updated on T_bc_base to avoid cumulating penalty temeprature during the while cycle according to new q_nbhes
                 if self.fls is not None:
                     self.T_bc[step] = T_bc_base + self.fls._compute_delta_t(
                         q_nbhes=self.q_nbhes, step=step
@@ -570,26 +590,13 @@ class Simulation:
                     f"step {step:5d} | it {it:3d} | EER {self.EER[step]:7.3f} | COP {self.COP[step]:7.3f} | Q_ground {self.Q_ground[step]:10.1f} | Tf1 {np.mean(self.Tf1[:, step]):7.2f} | Tfout {Tfout_iter:7.2f} | err {err:8.2f}"
                 )
 
+            # If heat_flux is True the new q_nbhes is evaluated according to last Tfout calculated
+
             if self.heat_flux and step != 0:
                 Tfout_fin = currstate.T_state[:, ns + nm + borehole.id_outlet]
                 self.q_nbhes[step] = (
                     self.mw_tot[:, step] * model.fluid.cp_w * (self.Tf1[:, step] - Tfout_fin)
                 )
-
-            properties_changed = False
-            if self.envinput.water_input is not None and step != 0:
-                tol = 1e-3
-                for j in range(n):
-                    k_bh, cp_bh, rho_bh = self._props_calculation(
-                        step=step, borehole=borehole, j=j
-                    )
-                    if (
-                        abs(np.mean(borehole.k0) - k_bh) > tol
-                        or abs(np.mean(borehole.cp_0) - cp_bh) > tol
-                        or abs(np.mean(borehole.rho_0) - rho_bh) > tol
-                    ):
-                        properties_changed = True
-                        borehole._update_properties(k_bh, cp_bh, rho_bh)
 
             self.T_history[step + 1] = currstate.T_state.copy()
 
@@ -601,7 +608,7 @@ class Simulation:
 
         return self.T_history
 
-    def _run_series(self) -> NDArray[np.float64]:
+    def _run_series(self) -> NDArray[np.float64]: # _run_series method still has to be updated according to COP calculation
         tic = time.time()  # start simulation
 
         model = self.model
@@ -760,8 +767,8 @@ class Simulation:
             step=step,
             timesteps=self.timesteps,
             V=np.pi * (borehole.D0**2) / 4.0 * borehole.Lbore,
-            A=np.pi * (borehole.D0**2) / 4.0,
-            q=self.q_nbhes[step, j],
+            A=np.pi * 0.030 * 0.5 * borehole.Lbore, # 0.030 pipe diameter of tube inserted - 0.5 percentage of holes
+            q=self.q_nbhes[step - 1, j],
         )
 
         self.k_borehole_history[step, j] = k_bh

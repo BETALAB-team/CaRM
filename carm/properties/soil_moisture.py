@@ -66,10 +66,11 @@ class SoilMoisture:
     w_rho = 1000.0
     w_latent = 2250000.0
     SOIL_PARAMS = {
-    "sand": {"b1": 0.228, "b2": 2.406, "b3": 4.909, "theta_s": 0.417, "theta_r": 0.020, "xs": 1-0.417, "x0": 0.012},
+    "sand": {"b1": 0.228, "b2": 2.406, "b3": 4.909, "theta_s": 0.417, "theta_r": 0.02152, "xs": 1-0.417, "x0": 0.012},
     "loam": {"b1": 0.310, "b2": 1.534, "b3": 3.222, "theta_s": 0.434, "theta_r": 0.027, "xs": 1-0.434, "x0": 0.018},
     "clay": {"b1": 0.197, "b2": 0.962, "b3": 2.521, "theta_s": 0.385, "theta_r": 0.090, "xs": 1-0.385, "x0": 0.024},
 }
+    #  just for this analyses we use 0.02152 as theta_r for sand instead of 0.020
 
     
     def __init__(
@@ -126,7 +127,8 @@ class SoilMoisture:
             Surface area over which water input is applied [m²].
         q : float
             Thermal power exchanged by the system [W]. Negative in heat extraction,
-            positive in heat injection.
+            positive in heat injection. However, it is correlated only with water
+            injection. Hence, the cooling case is the only one supported.
 
         Returns
         -------
@@ -143,7 +145,7 @@ class SoilMoisture:
         f_rho = lambda wr, rho_water, rho_dry: wr * rho_water + (1 - wr) * rho_dry
 
         self.Wvol_loss = self.Wvol_prev * self.loss_factor
-        self.Wvol_evap = ((q * timesteps) / self.w_latent) / 1000.0
+        self.Wvol_evap = max(((q * timesteps) / self.w_latent) / 1000.0, 0)
         self.Wvol_r = np.clip(
             self.Wvol_prev
             + self.water_input[step] * A * timesteps
