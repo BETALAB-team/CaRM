@@ -431,6 +431,14 @@ class Simulation:
 
             currstate.save_old()
 
+            # block only for this analysis to non have excessive irrigation
+            if self.heat_flux:
+                if self.Q_buildings[step] < 0:
+                    Wvol_prev = self.bh_p_varprops.Wvol_prev
+                    Winput_target = (self.bh_p_varprops.theta_s_loc * (np.pi * 0.5 ** 2 / 4 * borehole.Lbore) - self.bh_p_varprops.Wvol_prev * (1 - self.bh_p_varprops.loss_factor) + abs(self.q_nbhes[step-1, 0]) * self.timesteps / 
+                                     (self.bh_p_varprops.w_latent * self.bh_p_varprops.w_rho)) / (np.pi * 0.030 * borehole.Lbore * 0.5 * self.timesteps)
+                    self.bh_p_varprops.water_input[step] = max(Winput_target, 0)
+
             # borehole properties are updated according to the following condition
             properties_changed = False
             if self.envinput.water_input is not None and step != 0:
@@ -787,6 +795,7 @@ class Simulation:
             "rn_list": [self.model.ground[i].rn for i in range(len(self.model.ground))],
             "n_steps": self.n_steps,
             "timesteps": self.timesteps,
+            "water_input": self.bh_p_varprops.water_input
         }
 
         if self.envinput.water_input is not None:
