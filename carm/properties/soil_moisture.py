@@ -66,11 +66,11 @@ class SoilMoisture:
     w_rho = 1000.0
     w_latent = 2250000.0
     SOIL_PARAMS = {
-    "sand": {"b1": 0.228, "b2": 2.406, "b3": 4.909, "theta_s": 0.417, "theta_r": 0.02152, "xs": 1-0.417, "x0": 0.012},
-    "loam": {"b1": 0.310, "b2": 1.534, "b3": 3.222, "theta_s": 0.434, "theta_r": 0.027, "xs": 1-0.434, "x0": 0.018},
-    "clay": {"b1": 0.197, "b2": 0.962, "b3": 2.521, "theta_s": 0.385, "theta_r": 0.090, "xs": 1-0.385, "x0": 0.024},
+    "sand": {"b1": 0.228,  "b2": -2.406, "b3": 4.909, "theta_s": 0.417, "theta_r": 0.0295, "xs": 1-0.417-0.012, "x0": 0.012},
+    "loam": {"b1": 0.243,  "b2": 0.393,  "b3": 1.534, "theta_s": 0.434, "theta_r": 0.027, "xs": 1-0.434-0.018,   "x0": 0.018},
+    "clay": {"b1": -0.197, "b2": -0.962, "b3": 2.521, "theta_s": 0.385, "theta_r": 0.090, "xs": 1-0.385-0.024,   "x0": 0.024},
 }
-    #  just for this analyses we use 0.02152 as theta_r for sand instead of 0.020
+    #  just for this analyses we use 0.0295 as theta_r for sand instead of 0.020
 
     
     def __init__(
