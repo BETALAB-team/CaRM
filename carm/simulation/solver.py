@@ -32,7 +32,6 @@ from datetime import datetime
 
 import time
 import copy
-import pickle
 import numpy as np
 
 
@@ -788,36 +787,39 @@ class Simulation:
         return k_bh, cp_bh, rho_bh
 
     def _save_results(self) -> None:
-        to_save = {
-            "T_history": self.T_history,
-            "T_f1": self.Tf1,
-            "T_bc": self.T_bc,
-            "rn_list": [self.model.ground[i].rn for i in range(len(self.model.ground))],
-            "n_steps": self.n_steps,
-            "timesteps": self.timesteps,
-            "water_input": self.bh_p_varprops.water_input
+
+        arrays = {
+            "T_history": self.T_history.astype(np.float32),
+            "T_f1": self.Tf1.astype(np.float32),
+            "T_bc": self.T_bc.astype(np.float32),
+            "rn_list": np.array([self.model.ground[i].rn for i in range(len(self.model.ground))]),
+            "n_steps": np.array(self.n_steps),
+            "timesteps": np.array(self.timesteps),
         }
 
         if self.envinput.water_input is not None:
-            to_save["k_borehole"] = self.k_borehole_history
-            to_save["cp_borehole"] = self.cp_borehole_history
-            to_save["rho_borehole"] = self.rho_borehole_history
-            to_save["water_content_borehole"] = self.wc_history_borehole
+            arrays.update({
+                "k_borehole": self.k_borehole_history.astype(np.float32),
+                "cp_borehole": self.cp_borehole_history.astype(np.float32),
+                "rho_borehole": self.rho_borehole_history.astype(np.float32),
+                "water_content_borehole": self.wc_history_borehole.astype(np.float32),
+                "water_input": self.bh_p_varprops.water_input.astype(np.float32),
+            })
 
         if self.heat_flux:
-            to_save["COP"] = self.COP
-            to_save["EER"] = self.EER
-            to_save["Q_ground"] = self.Q_ground
-            to_save["Q_buildings"] = self.Q_buildings
-            to_save["abs_err"] = self.abs_err
+            arrays.update({
+                "COP": self.COP.astype(np.float32),
+                "EER": self.EER.astype(np.float32),
+                "Q_ground": self.Q_ground.astype(np.float32),
+                "Q_buildings": self.Q_buildings.astype(np.float32),
+                "abs_err": self.abs_err.astype(np.float32),
+            })
 
         output_dir = Path("results")
         output_dir.mkdir(exist_ok=True)
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_path = output_dir / f"CaRM_results_{timestamp}.pkl"
+        output_path = output_dir / f"CaRM_results_{timestamp}"
 
-        with open(output_path, "wb") as f:
-            pickle.dump(to_save, f)
-
-        print(f"Results saved to {output_path}")
+        np.savez_compressed(output_path, **arrays)
+        print(f"Results saved to {output_path}.npz")
