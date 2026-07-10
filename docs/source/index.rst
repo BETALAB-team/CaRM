@@ -14,5 +14,6 @@ flow effects.
    discretization
    fluid_properties
    fls_methods
+   grout_variable_properties
    output
    modules
