@@ -237,6 +237,8 @@ class Simulation:
             water_input = self.envinput.water_input
             if len(water_input) < self.n_steps:
                 raise ValueError("water_input time series has less than n_steps values")
+            if (self.model.borehole.D_irrigation is None) | (self.model.borehole.perf_fraction is None):
+                raise ValueError("When water_input is defined, D_irrigation and perf_fraction must be set as float in the BoreholeGeomtery class")
 
             self.bh_p_varprops = SoilMoisture(
                 water_input=water_input,
@@ -244,8 +246,8 @@ class Simulation:
                 soil_type=self.model.borehole.soil_type,
             )
 
-            self.k_borehole_history = np.empty(
-                (self.n_steps, len(self.model.ground)), dtype=np.float64
+            self.k_borehole_history = np.zeros(
+                (self.n_steps), dtype=np.float64
             )
             self.cp_borehole_history = copy.deepcopy(self.k_borehole_history)
             self.rho_borehole_history = copy.deepcopy(self.k_borehole_history)
@@ -409,7 +411,7 @@ class Simulation:
         self.A_inv = copy.deepcopy(self.A)  # type: ignore
 
         if self.heat_flux:
-            f_COP = lambda dT: 10.29 - 0.21 * dT + 0.0012 * dT**2.0
+            f_COP = lambda dT: 10.29 - 0.21 * dT + 0.0012 * dT**2.0 # here it is possible to change the polynomial function
             self.Tf1 = np.zeros((n, self.n_steps), dtype=np.float64)
             self.Tf1[:, 0] = self.T_history[0, :, ns + nm + borehole.id_inlet]
 
@@ -430,29 +432,20 @@ class Simulation:
 
             currstate.save_old()
 
-            # block only for this analysis to non have excessive irrigation
-            if self.heat_flux:
-                if self.Q_buildings[step] < 0:
-                    Wvol_prev = self.bh_p_varprops.Wvol_prev
-                    Winput_target = (self.bh_p_varprops.theta_s_loc * (np.pi * 0.5 ** 2 / 4 * borehole.Lbore) - self.bh_p_varprops.Wvol_prev * (1 - self.bh_p_varprops.loss_factor) + abs(self.q_nbhes[step-1, 0]) * self.timesteps / 
-                                     (self.bh_p_varprops.w_latent * self.bh_p_varprops.w_rho)) / (np.pi * 0.030 * borehole.Lbore * 0.5 * self.timesteps)
-                    self.bh_p_varprops.water_input[step] = max(Winput_target, 0)
-
             # borehole properties are updated according to the following condition
             properties_changed = False
             if self.envinput.water_input is not None and step != 0:
                 tol = 1e-3
-                for j in range(n):
-                    k_bh, cp_bh, rho_bh = self._props_calculation(
-                        step=step, borehole=borehole, j=j
-                    )
-                    if (
-                        abs(np.mean(borehole.k0) - k_bh) > tol
-                        or abs(np.mean(borehole.cp_0) - cp_bh) > tol
-                        or abs(np.mean(borehole.rho_0) - rho_bh) > tol
-                    ):
-                        properties_changed = True
-                        borehole._update_properties(k_bh, cp_bh, rho_bh)
+                k_bh, cp_bh, rho_bh = self._props_calculation(
+                    step=step, borehole=borehole,
+                )
+                if (
+                    abs(np.mean(borehole.k0) - k_bh) > tol
+                    or abs(np.mean(borehole.cp_0) - cp_bh) > tol
+                    or abs(np.mean(borehole.rho_0) - rho_bh) > tol
+                ):
+                    properties_changed = True
+                    borehole._update_properties(k_bh, cp_bh, rho_bh)
 
             # Tf1 is updated according to simulated values for boreholes in off-status
             idx_null = np.where(self.mw_tot[:, step] == 0)[0]
@@ -663,6 +656,23 @@ class Simulation:
 
             currstate.save_old()
 
+            properties_changed = False
+
+            if self.envinput.water_input is not None and step != 0:
+                tol = 1e-3
+                k_bh, cp_bh, rho_bh = self._props_calculation(
+                    step=step, borehole=borehole,
+                )
+
+                if (
+                    (abs(np.mean(borehole.k0) - k_bh) > tol)
+                    or (abs(np.mean(borehole.cp_0) - cp_bh) > tol)
+                    or (abs(np.mean(borehole.rho_0) - rho_bh) > tol)
+                ):
+
+                    properties_changed = True
+                    borehole._update_properties(k_bh, cp_bh, rho_bh)
+
             T_new_step = np.zeros((n, (ns + nm + nb + ninf)))
 
             if step != 0:
@@ -685,23 +695,6 @@ class Simulation:
                 Tf1_loc = self.Tf1[i, step]
                 for j in group:
                     gr_p = self.model.ground[j]
-
-                    properties_changed = False
-
-                    if self.envinput.water_input is not None:
-                        tol = 1e-3
-                        k_bh, cp_bh, rho_bh = self._props_calculation(
-                            step=step, borehole=borehole, j=j
-                        )
-
-                        if (
-                            (abs(np.mean(borehole.k0) - k_bh) > tol)
-                            or (abs(np.mean(borehole.cp_0) - cp_bh) > tol)
-                            or (abs(np.mean(borehole.rho_0) - rho_bh) > tol)
-                        ):
-
-                            properties_changed = True
-                            borehole._update_properties(k_bh, cp_bh, rho_bh)
 
                     (
                         T_borehole_old,
@@ -768,21 +761,21 @@ class Simulation:
 
         return self.T_history
 
-    def _props_calculation(self, step: int, borehole, j):
+    def _props_calculation(self, step: int, borehole):
 
         k_bh, cp_bh, rho_bh = self.bh_p_varprops._properties_calculation(
             step=step,
             timesteps=self.timesteps,
             V=np.pi * (borehole.D0**2) / 4.0 * borehole.Lbore,
-            A=np.pi * 0.030 * 0.5 * borehole.Lbore, # 0.030 pipe diameter of tube inserted - 0.5 percentage of holes
-            q=self.q_nbhes[step - 1, j],
+            A_irr=np.pi * borehole.D_irrigation * borehole.perf_fraction * borehole.Lbore,
+            q=np.mean(self.q_nbhes[step - 1]), # shared status because wc sensitivity to the borehole heat flux is very low
         )
 
-        self.k_borehole_history[step, j] = k_bh
-        self.cp_borehole_history[step, j] = cp_bh
-        self.rho_borehole_history[step, j] = rho_bh
+        self.k_borehole_history[step] = k_bh
+        self.cp_borehole_history[step] = cp_bh
+        self.rho_borehole_history[step] = rho_bh
 
-        self.wc_history_borehole[step, j] = self.bh_p_varprops.Wvol_r
+        self.wc_history_borehole[step] = self.bh_p_varprops.Wvol_r
 
         return k_bh, cp_bh, rho_bh
 

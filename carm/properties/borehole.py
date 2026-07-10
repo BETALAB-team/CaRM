@@ -27,6 +27,11 @@ from ..fluid import Fluid
 class BoreholeGeometry:
     """
     Geometric parameters of the borehole.
+    D_irrigation and perf_fraction parameters must be set as None if
+        grout variable properties are not taken into account.
+    
+    Note: the irrigation system is feasible only with shallow helical
+    heat exchangers.
 
     Attributes
     ----------
@@ -34,16 +39,31 @@ class BoreholeGeometry:
         Active borehole length [m].
     D0 : float
         Borehole diameter [m].
+    D_irrigation: None | float = None
+        Irrigation pipe diameter [m].
+    perf_fraction: None | float = None
+        Irrigation pipe perforation fraction [-].
+
     """
 
     Lbore: float  # m
     D0: float  # m
+    D_irrigation: None | float = None
+    perf_fraction: None | float = None
 
     def __post_init__(self) -> None:
         if self.Lbore <= 0:
             raise ValueError("Lbore must be > 0")
         if self.D0 <= 0:
             raise ValueError("D0 must be > 0")
+        if (self.D_irrigation is None) != (self.perf_fraction is None):
+            raise ValueError("D_irrigation and perf_fraction must be both None or float values")
+        if self.D_irrigation is not None:
+            if (self.D_irrigation <= 0.0) | (self.D_irrigation > self.D0):
+                raise ValueError("Invalid irrigation pipe diameter")
+            elif (self.perf_fraction < 0.0) or (self.perf_fraction >= 1.0):
+                raise ValueError("Invalid perforation percentage")
+        
 
     @property
     def r0(self) -> float:
@@ -188,6 +208,8 @@ class BoreholeProperties:
         self.Lbore = self.geom.Lbore
         self.D0 = self.geom.D0
         self.soil_type = self.thermalprops.soil_type
+        self.D_irrigation = self.geom.D_irrigation
+        self.perf_fraction = self.geom.perf_fraction
 
         self.m_mesh = self.mesh.m_mesh
 

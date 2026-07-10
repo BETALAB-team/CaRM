@@ -66,12 +66,10 @@ class SoilMoisture:
     w_rho = 1000.0
     w_latent = 2250000.0
     SOIL_PARAMS = {
-    "sand": {"b1": 0.228,  "b2": -2.406, "b3": 4.909, "theta_s": 0.417, "theta_r": 0.0295, "xs": 1-0.417-0.012, "x0": 0.012},
+    "sand": {"b1": 0.228,  "b2": -2.406, "b3": 4.909, "theta_s": 0.417, "theta_r": 0.020, "xs": 1-0.417-0.012, "x0": 0.012},
     "loam": {"b1": 0.243,  "b2": 0.393,  "b3": 1.534, "theta_s": 0.434, "theta_r": 0.027, "xs": 1-0.434-0.018,   "x0": 0.018},
     "clay": {"b1": -0.197, "b2": -0.962, "b3": 2.521, "theta_s": 0.385, "theta_r": 0.090, "xs": 1-0.385-0.024,   "x0": 0.024},
 }
-    #  just for this analyses we use 0.0295 as theta_r for sand instead of 0.020
-
     
     def __init__(
         self,
@@ -105,7 +103,7 @@ class SoilMoisture:
         step: int,
         timesteps: int,
         V: float,
-        A: float,
+        A_irr: float,
         q: float,
     ) -> Tuple[float, float, float]:
         """
@@ -123,8 +121,8 @@ class SoilMoisture:
             Duration of each timestep [s].
         V : float
             Reference soil volume [m³].
-        A : float
-            Surface area over which water input is applied [m²].
+        A_irr : float
+            Irrigation pipe area. Surface area over which water input is applied [m²].
         q : float
             Thermal power exchanged by the system [W]. Negative in heat extraction,
             positive in heat injection. However, it is correlated only with water
@@ -148,7 +146,7 @@ class SoilMoisture:
         self.Wvol_evap = max(((q * timesteps) / self.w_latent) / 1000.0, 0)
         self.Wvol_r = np.clip(
             self.Wvol_prev
-            + self.water_input[step] * A * timesteps
+            + self.water_input[step] * A_irr * timesteps
             - self.Wvol_loss
             - self.Wvol_evap,
             self.theta_r_loc* V,
