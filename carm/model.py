@@ -105,16 +105,18 @@ class PhysicalModel:
 
                 self.ground.append(gr_p)
 
-    def _get_temperatures(self, state, j):
+    def _get_temperatures(self, state, j, use_old = False):
 
         ngs = self.ground[0].m_mesh_sup + 1
         ng = self.ground[0].n_mesh * self.ground[0].m_mesh
         nb = self.borehole.n_equations * self.borehole.m_mesh
 
-        T_borehole = state.T_state[j, (ngs + ng) : (ngs + ng + nb)]
-        T_ground = state.T_state[j, ngs : (ngs + ng)]
-        T_ground_sup = state.T_state[j, 1:(ngs)]
-        T_ground_inf = state.T_state[j, (ngs + ng + nb) :]
-        Ts = state.T_state[j, 0]
+        T = state.T_state if not use_old else state.T_old
+
+        T_borehole = T[j, (ngs + ng) : (ngs + ng + nb)]
+        T_ground = T[j, ngs : (ngs + ng)]
+        T_ground_sup = T[j, 1:(ngs)]
+        T_ground_inf = T[j, (ngs + ng + nb) :]
+        Ts = T[j, 0]
 
         return T_borehole, T_ground, T_ground_sup, T_ground_inf, Ts

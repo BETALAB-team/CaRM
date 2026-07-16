@@ -32,7 +32,6 @@ from datetime import datetime
 
 import time
 import copy
-import pickle
 import numpy as np
 
 
@@ -95,9 +94,21 @@ class Simulation:
         Output temperature history, shape (n_steps + 1, n_bhes, n_dof) [°C].
     fls : FiniteLineSolution or None
         FLS thermal interference model. ``None`` in single-borehole mode.
+    gr_p_varprops : SoilMoisture or None
+        Soil moisture module for ground thermophysical properties.
+        Instantiated only if ``envinput.water_input`` is not ``None``.
     bh_p_varprops : SoilMoisture or None
         Soil moisture module for borehole thermophysical properties.
         Instantiated only if ``envinput.water_input`` is not ``None``.
+    k_ground_history : NDArray[np.float64]
+        Thermal conductivity history for the ground, shape (n_steps, n_bhes) [W/(m K)].
+        Available only if ``envinput.water_input`` is not ``None``.
+    cp_ground_history : NDArray[np.float64]
+        Volumetric heat capacity history for the ground, shape (n_steps, n_bhes) [J/(m³ K)].
+        Available only if ``envinput.water_input`` is not ``None``.
+    rho_ground_history : NDArray[np.float64]
+        Density history for the ground, shape (n_steps, n_bhes) [kg/m³].
+        Available only if ``envinput.water_input`` is not ``None``.
     k_borehole_history : NDArray[np.float64]
         Thermal conductivity history for the borehole, shape (n_steps, n_bhes) [W/(m K)].
         Available only if ``envinput.water_input`` is not ``None``.
@@ -106,6 +117,9 @@ class Simulation:
         Available only if ``envinput.water_input`` is not ``None``.
     rho_borehole_history : NDArray[np.float64]
         Density history for the borehole, shape (n_steps, n_bhes) [kg/m³].
+        Available only if ``envinput.water_input`` is not ``None``.
+    wc_history_ground : NDArray[np.float64]
+        Residual water volume history for the ground, shape (n_steps, n_bhes) [m³].
         Available only if ``envinput.water_input`` is not ``None``.
     wc_history_borehole : NDArray[np.float64]
         Residual water volume history for the borehole, shape (n_steps, n_bhes) [m³].
@@ -223,6 +237,12 @@ class Simulation:
             water_input = self.envinput.water_input
             if len(water_input) < self.n_steps:
                 raise ValueError("water_input time series has less than n_steps values")
+            if (self.model.borehole.D_irrigation is None) | (
+                self.model.borehole.perf_fraction is None
+            ):
+                raise ValueError(
+                    "When water_input is defined, D_irrigation and perf_fraction must be set as float in the BoreholeGeomtery class"
+                )
 
             self.bh_p_varprops = SoilMoisture(
                 water_input=water_input,
@@ -230,9 +250,7 @@ class Simulation:
                 soil_type=self.model.borehole.soil_type,
             )
 
-            self.k_borehole_history = np.empty(
-                (self.n_steps, len(self.model.ground)), dtype=np.float64
-            )
+            self.k_borehole_history = np.zeros((self.n_steps), dtype=np.float64)
             self.cp_borehole_history = copy.deepcopy(self.k_borehole_history)
             self.rho_borehole_history = copy.deepcopy(self.k_borehole_history)
 
@@ -394,6 +412,23 @@ class Simulation:
         self.A = [0] * n  # type: ignore
         self.A_inv = copy.deepcopy(self.A)  # type: ignore
 
+        if self.heat_flux:
+            f_COP = (
+                lambda dT: 10.29 - 0.21 * dT + 0.0012 * dT**2.0
+            )  # here it is possible to change the polynomial function
+            f_EER = copy.deepcopy(f_COP)
+            self.Tf1 = np.zeros((n, self.n_steps), dtype=np.float64)
+            self.Tf1[:, 0] = self.T_history[0, :, ns + nm + borehole.id_inlet]
+
+            self.COP = np.full(self.n_steps, np.nan, dtype=np.float64)
+            self.EER = copy.deepcopy(self.COP)
+            self.Q_ground = np.full(self.n_steps, np.nan, dtype=np.float64)
+
+            self.abs_err = np.full(self.n_steps, np.nan, dtype=np.float64)
+
+        maxerr = 10  # W
+        Niter = 200  # -
+
         for step in range(self.n_steps):
             # external environment aliasing
             T_ext = self.envinput.T_ext[step]
@@ -402,59 +437,43 @@ class Simulation:
 
             currstate.save_old()
 
+            # borehole properties are updated according to the following condition
+            properties_changed = False
+            if self.envinput.water_input is not None and step != 0:
+                tol = 1e-3
+                k_bh, cp_bh, rho_bh = self._props_calculation(
+                    step=step,
+                    borehole=borehole,
+                )
+                if (
+                    abs(np.mean(borehole.k0) - k_bh) > tol
+                    or abs(np.mean(borehole.cp_0) - cp_bh) > tol
+                    or abs(np.mean(borehole.rho_0) - rho_bh) > tol
+                ):
+                    properties_changed = True
+                    borehole._update_properties(k_bh, cp_bh, rho_bh)
+
+            # Tf1 is updated according to simulated values for boreholes in off-status
             idx_null = np.where(self.mw_tot[:, step] == 0)[0]
             if len(idx_null) > 0:
                 self.Tf1[idx_null, step] = currstate.T_old[
                     idx_null, ns + nm + (borehole.id_inlet)
                 ]
 
+            # Tfout and boundary condition are extracted and copied before entering in Picard cycle
             Tfout = currstate.T_old[:, ns + nm + borehole.id_outlet]
 
             T_new_step = np.zeros((n, (ns + nm + nb + ninf)))
 
-            if step != 0:
-                qfluid = (
-                    self.mw_tot[:, step]
-                    * model.fluid.cp_w
-                    * (self.Tf1[:, step] - Tfout)
-                )
-                self.q_nbhes[step] = qfluid
+            T_bc_base = self.T_bc[step].copy()
 
-            if self.fls is not None:
-                self.T_bc[step] = self.T_bc[step] + self.fls._compute_delta_t(
-                    q_nbhes=self.q_nbhes, step=step
-                )
-
+            # coefficient matrix is built for each borehole
             for j, gr_p in enumerate(model.ground):
-                properties_changed = False
-
-                if self.envinput.water_input is not None:
-                    tol = 1e-3
-                    k_bh, cp_bh, rho_bh = self._props_calculation(
-                        step=step, borehole=borehole, j=j
-                    )
-
-                    if (
-                        (abs(np.mean(borehole.k0) - k_bh) > tol)
-                        or (abs(np.mean(borehole.cp_0) - cp_bh) > tol)
-                        or (abs(np.mean(borehole.rho_0) - rho_bh) > tol)
-                    ):
-
-                        properties_changed = True
-                        borehole._update_properties(k_bh, cp_bh, rho_bh)
-
-                (
-                    T_borehole_old,
-                    T_ground_old,
-                    T_ground_sup_old,
-                    T_ground_inf_old,
-                    Ts_old,
-                ) = self.model._get_temperatures(currstate, j)
 
                 if (
                     step == 0
                     or (self.mw_tot[j, step] != self.mw_tot[j, step - 1])
-                    or (properties_changed == True)
+                    or properties_changed
                 ):
                     self.A[j] = build_global_matrix(
                         self.model,
@@ -466,38 +485,131 @@ class Simulation:
                     )
                     self.A_inv[j] = splu(self.A[j])
 
-                self.b = build_global_rhs(
-                    self.model,
-                    gr_p,
-                    self.env,
-                    self.timesteps,
-                    T_ground_old,
-                    T_borehole_old,
-                    T_ground_sup_old,
-                    T_ground_inf_old,
-                    Ts_old,
-                    T_ext,
-                    T_sky,
-                    self.T_bc[step, j],
-                    SolarRad,
-                    self.mw_tot[j, step],
-                    self.Tf1[j, step],
-                    self.adiabatic,
+            Tfout_iter = np.mean(Tfout)
+
+            # COP, EER and Qground values are calculated before entering in Picard loop if heat_flux mode is True
+            if self.heat_flux and step != 0 and self.Q_buildings[step] != 0:
+
+                Tfout_iter = np.sum(self.mw_tot[:, step] * Tfout) / np.sum(
+                    self.mw_tot[:, step]
+                )  # Temperature weighted average according to mass flow
+
+                if self.Q_buildings[step] > 0:
+
+                    self.COP[step] = f_COP(self.T_supply[step] - Tfout_iter)
+                    self.Q_ground[step] = -self.Q_buildings[step] * (
+                        1 - 1 / self.COP[step]
+                    )
+
+                elif self.Q_buildings[step] < 0:
+
+                    self.EER[step] = f_EER(Tfout_iter - self.T_supply[step])
+                    self.Q_ground[step] = -self.Q_buildings[step] * (
+                        1 + 1 / self.EER[step]
+                    )
+
+            err = np.inf
+            it = 0
+
+            # Picard iteration to calculate Tfout untile 200 iterations are reached or Qground (from COP / EER) - q_liv (m*cp*dT) < 10 W
+            while err > maxerr and it < Niter:
+
+                if self.heat_flux and step != 0 and self.Q_buildings[step] != 0:
+                    self.Tf1[:, step] = Tfout_iter + self.Q_ground[step] / (
+                        np.sum(self.mw_tot[:, step]) * self.model.fluid.cp_w
+                    )
+
+                if step != 0:
+                    qfluid = (
+                        self.mw_tot[:, step]
+                        * model.fluid.cp_w
+                        * (self.Tf1[:, step] - Tfout)
+                    )
+                    self.q_nbhes[step] = qfluid
+
+                # Boundary condition is updated on T_bc_base to avoid cumulating penalty temeprature during the while cycle according to new q_nbhes
+                if self.fls is not None:
+                    self.T_bc[step] = T_bc_base + self.fls._compute_delta_t(
+                        q_nbhes=self.q_nbhes, step=step
+                    )
+
+                for j, gr_p in enumerate(model.ground):
+
+                    (
+                        T_borehole_old,
+                        T_ground_old,
+                        T_ground_sup_old,
+                        T_ground_inf_old,
+                        Ts_old,
+                    ) = self.model._get_temperatures(currstate, j, use_old=True)
+
+                    self.b = build_global_rhs(
+                        self.model,
+                        gr_p,
+                        self.env,
+                        self.timesteps,
+                        T_ground_old,
+                        T_borehole_old,
+                        T_ground_sup_old,
+                        T_ground_inf_old,
+                        Ts_old,
+                        T_ext,
+                        T_sky,
+                        self.T_bc[step, j],
+                        SolarRad,
+                        self.mw_tot[j, step],
+                        self.Tf1[j, step],
+                        self.adiabatic,
+                    )
+
+                    assert np.all(np.isfinite(self.A[j].data)), "A contains NaN or Inf"  # type: ignore
+                    assert np.all(np.isfinite(self.b)), "b contains NaN or Inf"  # type: ignore
+
+                    T_new_j = self.A_inv[j].solve(self.b)  # type: ignore
+
+                    assert np.all(np.isfinite(T_new_j)), "T_new is not finite"
+
+                    r = self.A[j] @ T_new_j - self.b
+                    assert np.max(np.abs(r)) < 1e-6
+
+                    T_new_step[j, :] = T_new_j
+
+                currstate.update(T_new_step)
+
+                if self.heat_flux and step != 0 and self.Q_buildings[step] != 0:
+                    Tfout = currstate.T_state[:, ns + nm + borehole.id_outlet]
+                    Tfout_iter = np.sum(self.mw_tot[:, step] * Tfout) / np.sum(
+                        self.mw_tot[:, step]
+                    )
+                    q_liv = (
+                        np.sum(self.mw_tot[:, step])
+                        * self.model.fluid.cp_w
+                        * (Tfout_iter - np.mean(self.Tf1[:, step]))
+                    )
+                    err = abs(self.Q_ground[step] - (-q_liv))
+                    it += 1
+
+                    self.abs_err[step] = err
+
+                else:
+                    err = 0.0
+                    break
+
+            if self.heat_flux:
+                print(
+                    f"step {step:5d} | it {it:3d} | EER {self.EER[step]:7.3f} | COP {self.COP[step]:7.3f} | Q_ground {self.Q_ground[step]:10.1f} | Tf1 {np.mean(self.Tf1[:, step]):7.2f} | Tfout {Tfout_iter:7.2f} | err {err:8.2f}"
                 )
 
-                assert np.all(np.isfinite(self.A[j].data)), "A contains NaN or Inf"  # type: ignore
-                assert np.all(np.isfinite(self.b)), "b contains NaN or Inf"  # type: ignore
+            # If heat_flux is True the new q_nbhes is evaluated according to last Tfout calculated
 
-                T_new_j = self.A_inv[j].solve(self.b)  # type: ignore
+            if self.heat_flux and step != 0:
+                Tfout_fin = currstate.T_state[:, ns + nm + borehole.id_outlet]
+                self.q_nbhes[step] = (
+                    self.mw_tot[:, step]
+                    * model.fluid.cp_w
+                    * (self.Tf1[:, step] - Tfout_fin)
+                )
 
-                assert np.all(np.isfinite(T_new_j)), "T_new is not finite"
-
-                r = self.A[j] @ T_new_j - self.b
-                assert np.max(np.abs(r)) < 1e-6
-
-                T_new_step[j, :] = T_new_j
-
-            currstate.update(T_new_step)
             self.T_history[step + 1] = currstate.T_state.copy()
 
         toc = time.time()
@@ -508,7 +620,11 @@ class Simulation:
 
         return self.T_history
 
-    def _run_series(self) -> NDArray[np.float64]:
+    def _run_series(
+        self,
+    ) -> NDArray[
+        np.float64
+    ]:
         tic = time.time()  # start simulation
 
         model = self.model
@@ -519,6 +635,7 @@ class Simulation:
         nm = ground.m_mesh * ground.n_mesh  # middle ground layers
         nb = borehole.m_mesh * borehole.n_equations  # middle borehole layers
         ninf = ground.m_mesh_inf  # lower ground layers
+        n_groups = len(self.groups.values())
 
         T0_matrix = np.zeros(
             (n, (ns + nm + nb + ninf)), dtype=np.float64
@@ -529,11 +646,9 @@ class Simulation:
             dtype=np.float64,
         )  # T_history initialization array, n_steps x n_bhes x total mesh
 
-        qfluid = np.zeros((self.n_steps, n), dtype=np.float64)  # fluid heat flux array
+        self.q_nbhes = np.zeros((self.n_steps, n), dtype=np.float64)  # fluid heat flux array, n_steps x n_bhes
 
-        self.q_nbhes = copy.deepcopy(
-            qfluid
-        )  # Borehole heat flux array, n_steps x n_bhes
+        qfluid = copy.deepcopy(self.q_nbhes)
 
         Tstartsup = self.T_sup_kusuda[0, :].ravel()
         Tstartmiddle = self.T_middle_kusuda[0, :].ravel()
@@ -548,6 +663,28 @@ class Simulation:
         self.A = [0] * n  # type: ignore
         self.A_inv = copy.deepcopy(self.A)  # type: ignore
 
+        group_inlet_fluid_idx = np.array([g[0] for g in self.groups.values()]) # to define the head boreholes of each series connection
+        group_outlet_fluid_idx = np.array([g[-1] for g in self.groups.values()]) # to define the bottom boreholes of each series connection
+        mw_boreholes = np.repeat(self.mw_tot, [len(g) for g in self.groups.values()], axis = 0) # to account for the massflow of each borehole
+
+        self.Tf1_groups = np.zeros((n_groups, self.n_steps), dtype=np.float64)
+        self.Tf1_groups[:, 0] = self.T_history[0, group_outlet_fluid_idx, ns + nm + borehole.id_inlet]
+
+        if self.heat_flux:
+            f_COP = (
+                lambda dT: 10.29 - 0.21 * dT + 0.0012 * dT**2.0
+            )  # here it is possible to change the polynomial function
+            f_EER = copy.deepcopy(f_COP)
+
+            self.COP = np.full(self.n_steps, np.nan, dtype=np.float64)
+            self.EER = copy.deepcopy(self.COP)
+            self.Q_ground = np.full(self.n_steps, np.nan, dtype=np.float64)
+
+            self.abs_err = np.full(self.n_steps, np.nan, dtype=np.float64)
+
+        maxerr = 10  # W
+        Niter = 200  # -
+
         for step in range(self.n_steps):
             # external environment aliasing
             T_ext = self.envinput.T_ext[step]
@@ -556,103 +693,172 @@ class Simulation:
 
             currstate.save_old()
 
-            T_new_step = np.zeros((n, (ns + nm + nb + ninf)))
-
-            if step != 0:
-                self.q_nbhes[step] = qfluid[step - 1]
-
-            if self.fls is not None:
-                self.T_bc[step] = self.T_bc[step] + self.fls._compute_delta_t(
-                    q_nbhes=self.q_nbhes, step=step
+            # borehole properties are updated according to the following condition
+            properties_changed = False
+            if self.envinput.water_input is not None and step != 0:
+                tol = 1e-3
+                k_bh, cp_bh, rho_bh = self._props_calculation(
+                    step=step,
+                    borehole=borehole,
                 )
+                if (
+                    abs(np.mean(borehole.k0) - k_bh) > tol
+                    or abs(np.mean(borehole.cp_0) - cp_bh) > tol
+                    or abs(np.mean(borehole.rho_0) - rho_bh) > tol
+                ):
+                    properties_changed = True
+                    borehole._update_properties(k_bh, cp_bh, rho_bh)
 
             idx_null = np.where(self.mw_tot[:, step] == 0)[0]
             if len(idx_null) > 0:
-                self.Tf1[idx_null, step] = currstate.T_old[
-                    idx_null, ns + nm + (borehole.id_inlet)
-                ]
+                self.Tf1_groups[idx_null, step] = currstate.T_old[
+                    group_inlet_fluid_idx[idx_null], ns + nm + (borehole.id_inlet)
+                ] # 
 
-            for i, group in enumerate(self.groups.values()):
+            # Tfout and boundary condition are extracted and copied before entering in Picard cycle
 
-                mw_loc = self.mw_tot[i, step]
-                Tf1_loc = self.Tf1[i, step]
-                for j in group:
-                    gr_p = self.model.ground[j]
+            Tfout = currstate.T_old[group_outlet_fluid_idx, ns + nm + borehole.id_outlet]
+            Tfinlet_fls = currstate.T_old[:, ns + nm + borehole.id_inlet]
+            Tfout_fls = currstate.T_old[:, ns + nm + borehole.id_outlet]
+            T_new_step = np.zeros((n, (ns + nm + nb + ninf)))
+            T_bc_base = self.T_bc[step].copy()
+            Tfout_iter = np.mean(Tfout)
 
-                    properties_changed = False
+            # COP, EER and Qground values are calculated before entering in Picard loop if heat_flux mode is True
+            if self.heat_flux and step != 0 and self.Q_buildings[step] != 0:
 
-                    if self.envinput.water_input is not None:
-                        tol = 1e-3
-                        k_bh, cp_bh, rho_bh = (
-                            self._props_calculation(
-                                step=step, borehole=borehole, j=j
-                            )
-                        )
+                Tfout_iter = np.sum(self.mw_tot[:, step] * Tfout) / np.sum(
+                    self.mw_tot[:, step]
+                )  # Temperature weighted average according to mass flow
 
-                        if (
-                            (abs(np.mean(borehole.k0) - k_bh) > tol)
-                            or (abs(np.mean(borehole.cp_0) - cp_bh) > tol)
-                            or (abs(np.mean(borehole.rho_0) - rho_bh) > tol)
-                        ):
+                if self.Q_buildings[step] > 0:
 
-                            properties_changed = True
-                            borehole._update_properties(k_bh, cp_bh, rho_bh)
-
-                    (
-                        T_borehole_old,
-                        T_ground_old,
-                        T_ground_sup_old,
-                        T_ground_inf_old,
-                        Ts_old,
-                    ) = self.model._get_temperatures(currstate, j)
-
-                    if (
-                        (step == 0)
-                        or (mw_loc != self.mw_tot[i, step - 1])
-                        or (properties_changed == True)
-                    ):
-                        self.A[j] = build_global_matrix(
-                            self.model, gr_p, self.env, self.timesteps, mw_loc
-                        )
-                        self.A_inv[j] = splu(self.A[j])
-
-                    b = build_global_rhs(
-                        self.model,
-                        gr_p,
-                        self.env,
-                        self.timesteps,
-                        T_ground_old,
-                        T_borehole_old,
-                        T_ground_sup_old,
-                        T_ground_inf_old,
-                        Ts_old,
-                        T_ext,
-                        T_sky,
-                        self.T_bc[step, j],
-                        SolarRad,
-                        mw_loc,
-                        Tf1_loc,
-                        self.adiabatic,
+                    self.COP[step] = f_COP(self.T_supply[step] - Tfout_iter)
+                    self.Q_ground[step] = -self.Q_buildings[step] * (
+                        1 - 1 / self.COP[step]
                     )
 
-                    assert np.all(np.isfinite(self.A[j].data)), "A contains NaN or Inf"  # type: ignore
-                    assert np.all(np.isfinite(b)), "b contains NaN or Inf"  # type: ignore
+                elif self.Q_buildings[step] < 0:
 
-                    T_new_i_j = self.A_inv[j].solve(b)  # type: ignore
+                    self.EER[step] = f_EER(Tfout_iter - self.T_supply[step])
+                    self.Q_ground[step] = -self.Q_buildings[step] * (
+                        1 + 1 / self.EER[step]
+                    )
 
-                    assert np.all(np.isfinite(T_new_i_j)), "T_new is not finite"
+            if step != 0:
+                    qfluid[step] = (
+                        mw_boreholes[:, step]
+                        * model.fluid.cp_w
+                        * (Tfinlet_fls - Tfout_fls)
+                    )
+                    self.q_nbhes[step] = qfluid[step]
 
-                    r = self.A[j] @ T_new_i_j - b
-                    assert np.max(np.abs(r)) < 1e-6
+            err = np.inf
+            it = 0
 
-                    Tfout = T_new_i_j[ns + nm + borehole.id_outlet]
-                    qfluid[step, j] = mw_loc * model.fluid.cp_w * (Tf1_loc - Tfout)
+            while err > maxerr and it < Niter:
 
-                    Tf1_loc = T_new_i_j[ns + nm + (borehole.n_equations - 1)]
+                if self.heat_flux and step != 0 and self.Q_buildings[step] != 0:
+                    self.Tf1_groups[:, step] = Tfout_iter + self.Q_ground[step] / (
+                        np.sum(self.mw_tot[:, step]) * self.model.fluid.cp_w
+                    )
 
-                    T_new_step[j, :] = T_new_i_j
+                # Boundary condition is updated on T_bc_base to avoid cumulating penalty temeprature during the while cycle according to new q_nbhes
+                if self.fls is not None:
+                    self.T_bc[step] = T_bc_base + self.fls._compute_delta_t(
+                        q_nbhes=self.q_nbhes, step=step
+                    )
 
-            currstate.update(T_new_step)
+                for i, group in enumerate(self.groups.values()):
+
+                    mw_loc = self.mw_tot[i, step]
+                    Tf1_loc = self.Tf1_groups[i, step]
+                    for j in group:
+                        gr_p = self.model.ground[j]
+
+                        (
+                            T_borehole_old,
+                            T_ground_old,
+                            T_ground_sup_old,
+                            T_ground_inf_old,
+                            Ts_old,
+                        ) = self.model._get_temperatures(currstate, j)
+
+                        if (
+                            (step == 0)
+                            or (mw_loc != self.mw_tot[i, step - 1])
+                            or properties_changed
+                        ):
+                            self.A[j] = build_global_matrix(
+                                self.model, gr_p, self.env, self.timesteps, mw_loc, adiabatic=False
+                            )
+                            self.A_inv[j] = splu(self.A[j])
+
+                        b = build_global_rhs(
+                            self.model,
+                            gr_p,
+                            self.env,
+                            self.timesteps,
+                            T_ground_old,
+                            T_borehole_old,
+                            T_ground_sup_old,
+                            T_ground_inf_old,
+                            Ts_old,
+                            T_ext,
+                            T_sky,
+                            self.T_bc[step, j],
+                            SolarRad,
+                            mw_loc,
+                            Tf1_loc,
+                            adiabatic=False,
+                        )
+
+                        assert np.all(np.isfinite(self.A[j].data)), "A contains NaN or Inf"  # type: ignore
+                        assert np.all(np.isfinite(b)), "b contains NaN or Inf"  # type: ignore
+
+                        T_new_i_j = self.A_inv[j].solve(b)  # type: ignore
+
+                        assert np.all(np.isfinite(T_new_i_j)), "T_new is not finite"
+
+                        r = self.A[j] @ T_new_i_j - b
+                        assert np.max(np.abs(r)) < 1e-6
+
+                        Tfout_loc = T_new_i_j[ns + nm + borehole.id_outlet]
+                        qfluid[step, j] = mw_loc * model.fluid.cp_w * (Tf1_loc - Tfout_loc)
+                        self.q_nbhes[step, j] = qfluid[step, j]
+
+                        Tf1_loc = Tfout_loc
+
+                        T_new_step[j, :] = T_new_i_j
+
+                currstate.update(T_new_step)
+
+                if self.heat_flux and step != 0 and self.Q_buildings[step] != 0:
+                    Tfout = currstate.T_state[
+                        group_outlet_fluid_idx, ns + nm + borehole.id_outlet
+                    ]
+                    Tfout_iter = np.sum(self.mw_tot[:, step] * Tfout) / np.sum(
+                        self.mw_tot[:, step]
+                    )
+                    q_liv = (
+                        np.sum(self.mw_tot[:, step])
+                        * self.model.fluid.cp_w
+                        * (Tfout_iter - np.mean(self.Tf1_groups[:, step]))
+                    )
+                    err = abs(self.Q_ground[step] - (-q_liv))
+                    it += 1
+
+                    self.abs_err[step] = err
+
+                else:
+                    err = 0.0
+                    break
+
+            if self.heat_flux:
+                print(
+                    f"step {step:5d} | it {it:3d} | EER {self.EER[step]:7.3f} | COP {self.COP[step]:7.3f} | Q_ground {self.Q_ground[step]:10.1f} | Tf1 {np.mean(self.Tf1_groups[:, step]):7.2f} | Tfout {Tfout_iter:7.2f} | err {err:8.2f}"
+                )
+
             self.T_history[step + 1] = currstate.T_state.copy()
 
         toc = time.time()
@@ -663,47 +869,76 @@ class Simulation:
 
         return self.T_history
 
-    def _props_calculation(self, step: int, borehole, j):
+    def _props_calculation(self, step: int, borehole):
 
         k_bh, cp_bh, rho_bh = self.bh_p_varprops._properties_calculation(
             step=step,
             timesteps=self.timesteps,
             V=np.pi * (borehole.D0**2) / 4.0 * borehole.Lbore,
+<<<<<<< HEAD
             A=np.pi * (borehole.D0**2) / 4.0,
             q=self.q_nbhes[step, j],
+=======
+            A_irr=np.pi
+            * borehole.D_irrigation
+            * borehole.perf_fraction
+            * borehole.Lbore,
+            q=np.mean(
+                self.q_nbhes[step - 1]
+            ),  # shared status because wc sensitivity to the borehole heat flux is very low
+>>>>>>> COP-implementation
         )
 
-        self.k_borehole_history[step, j] = k_bh
-        self.cp_borehole_history[step, j] = cp_bh
-        self.rho_borehole_history[step, j] = rho_bh
+        self.k_borehole_history[step] = k_bh
+        self.cp_borehole_history[step] = cp_bh
+        self.rho_borehole_history[step] = rho_bh
 
-        self.wc_history_borehole[step, j] = self.bh_p_varprops.Wvol_r
+        self.wc_history_borehole[step] = self.bh_p_varprops.Wvol_r
 
         return k_bh, cp_bh, rho_bh
 
     def _save_results(self) -> None:
-        to_save = {
-            "T_history": self.T_history,
-            "T_f1": self.Tf1,
-            "T_bc": self.T_bc,
-            "rn_list": [self.model.ground[i].rn for i in range(len(self.model.ground))],
-            "n_steps": self.n_steps,
-            "timesteps": self.timesteps,
+
+        arrays = {
+            "T_history": self.T_history.astype(np.float32),
+            "T_f1": (self.Tf1.astype(np.float32) if self.Tf1 is not None else self.Tf1_groups.astype(np.float32)),
+            "T_bc": self.T_bc.astype(np.float32),
+            "rn_list": np.array(
+                [self.model.ground[i].rn for i in range(len(self.model.ground))]
+            ),
+            "n_steps": np.array(self.n_steps),
+            "timesteps": np.array(self.timesteps),
         }
 
         if self.envinput.water_input is not None:
-            to_save["k_borehole"] = self.k_borehole_history
-            to_save["cp_borehole"] = self.cp_borehole_history
-            to_save["rho_borehole"] = self.rho_borehole_history
-            to_save["water_content_borehole"] = self.wc_history_borehole
+            arrays.update(
+                {
+                    "k_borehole": self.k_borehole_history.astype(np.float32),
+                    "cp_borehole": self.cp_borehole_history.astype(np.float32),
+                    "rho_borehole": self.rho_borehole_history.astype(np.float32),
+                    "water_content_borehole": self.wc_history_borehole.astype(
+                        np.float32
+                    ),
+                    "water_input": self.bh_p_varprops.water_input.astype(np.float32),
+                }
+            )
+
+        if self.heat_flux:
+            arrays.update(
+                {
+                    "COP": self.COP.astype(np.float32),
+                    "EER": self.EER.astype(np.float32),
+                    "Q_ground": self.Q_ground.astype(np.float32),
+                    "Q_buildings": self.Q_buildings.astype(np.float32),
+                    "abs_err": self.abs_err.astype(np.float32),
+                }
+            )
 
         output_dir = Path("results")
         output_dir.mkdir(exist_ok=True)
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_path = output_dir / f"CaRM_results_{timestamp}.pkl"
+        output_path = output_dir / f"CaRM_results_{timestamp}"
 
-        with open(output_path, "wb") as f:
-            pickle.dump(to_save, f)
-
-        print(f"Results saved to {output_path}")
+        np.savez_compressed(output_path, **arrays)
+        print(f"Results saved to {output_path}.npz")
