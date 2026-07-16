@@ -896,7 +896,7 @@ class Simulation:
 
         arrays = {
             "T_history": self.T_history.astype(np.float32),
-            "T_f1": self.Tf1.astype(np.float32),
+            "T_f1": (self.Tf1.astype(np.float32) if self.Tf1 is not None else self.Tf1_groups.astype(np.float32)),
             "T_bc": self.T_bc.astype(np.float32),
             "rn_list": np.array(
                 [self.model.ground[i].rn for i in range(len(self.model.ground))]
