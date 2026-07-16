@@ -27,7 +27,7 @@
   <meta property="og:title" content="carm.model | CaRM 0.1 documentation" />
   <meta name="twitter:title" content="carm.model | CaRM 0.1 documentation" />
   <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=e72c8e07" />
-  <link rel="stylesheet" type="text/css" href="../../_static/theme.css?v=979577e3" />
+  <link rel="stylesheet" type="text/css" href="../../_static/theme.css?v=d6d7c91b" />
   <link rel="search" title="Search" href="../../search.html" />
   <link rel="index" title="Index" href="../../genindex.html" />
 </head>
@@ -109,6 +109,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../../discretization.html">Discretization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../fluid_properties.html">Fluid Properties</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../fls_methods.html">FLS Calculation Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grout_variable_properties.html">Variable Grout Properties</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../heatflux_mode.html">Heat Flux Mode</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../output.html">Output</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../modules.html">carm</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../carm.html">carm package</a></li>
@@ -265,19 +267,21 @@
 </span><span id="line-105">
 </span><span id="line-106">                <span class="bp">self</span><span class="o">.</span><span class="n">ground</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gr_p</span><span class="p">)</span>
 </span><span id="line-107">
-</span><span id="line-108">    <span class="k">def</span><span class="w"> </span><span class="nf">_get_temperatures</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">j</span><span class="p">):</span>
+</span><span id="line-108">    <span class="k">def</span><span class="w"> </span><span class="nf">_get_temperatures</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">use_old</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
 </span><span id="line-109">
 </span><span id="line-110">        <span class="n">ngs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ground</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">m_mesh_sup</span> <span class="o">+</span> <span class="mi">1</span>
 </span><span id="line-111">        <span class="n">ng</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ground</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">n_mesh</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ground</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">m_mesh</span>
 </span><span id="line-112">        <span class="n">nb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">borehole</span><span class="o">.</span><span class="n">n_equations</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">borehole</span><span class="o">.</span><span class="n">m_mesh</span>
 </span><span id="line-113">
-</span><span id="line-114">        <span class="n">T_borehole</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">T_state</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="p">(</span><span class="n">ngs</span> <span class="o">+</span> <span class="n">ng</span><span class="p">)</span> <span class="p">:</span> <span class="p">(</span><span class="n">ngs</span> <span class="o">+</span> <span class="n">ng</span> <span class="o">+</span> <span class="n">nb</span><span class="p">)]</span>
-</span><span id="line-115">        <span class="n">T_ground</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">T_state</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">ngs</span> <span class="p">:</span> <span class="p">(</span><span class="n">ngs</span> <span class="o">+</span> <span class="n">ng</span><span class="p">)]</span>
-</span><span id="line-116">        <span class="n">T_ground_sup</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">T_state</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="mi">1</span><span class="p">:(</span><span class="n">ngs</span><span class="p">)]</span>
-</span><span id="line-117">        <span class="n">T_ground_inf</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">T_state</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="p">(</span><span class="n">ngs</span> <span class="o">+</span> <span class="n">ng</span> <span class="o">+</span> <span class="n">nb</span><span class="p">)</span> <span class="p">:]</span>
-</span><span id="line-118">        <span class="n">Ts</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">T_state</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
-</span><span id="line-119">
-</span><span id="line-120">        <span class="k">return</span> <span class="n">T_borehole</span><span class="p">,</span> <span class="n">T_ground</span><span class="p">,</span> <span class="n">T_ground_sup</span><span class="p">,</span> <span class="n">T_ground_inf</span><span class="p">,</span> <span class="n">Ts</span></div>
+</span><span id="line-114">        <span class="n">T</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">T_state</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">use_old</span> <span class="k">else</span> <span class="n">state</span><span class="o">.</span><span class="n">T_old</span>
+</span><span id="line-115">
+</span><span id="line-116">        <span class="n">T_borehole</span> <span class="o">=</span> <span class="n">T</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="p">(</span><span class="n">ngs</span> <span class="o">+</span> <span class="n">ng</span><span class="p">)</span> <span class="p">:</span> <span class="p">(</span><span class="n">ngs</span> <span class="o">+</span> <span class="n">ng</span> <span class="o">+</span> <span class="n">nb</span><span class="p">)]</span>
+</span><span id="line-117">        <span class="n">T_ground</span> <span class="o">=</span> <span class="n">T</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">ngs</span> <span class="p">:</span> <span class="p">(</span><span class="n">ngs</span> <span class="o">+</span> <span class="n">ng</span><span class="p">)]</span>
+</span><span id="line-118">        <span class="n">T_ground_sup</span> <span class="o">=</span> <span class="n">T</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="mi">1</span><span class="p">:(</span><span class="n">ngs</span><span class="p">)]</span>
+</span><span id="line-119">        <span class="n">T_ground_inf</span> <span class="o">=</span> <span class="n">T</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="p">(</span><span class="n">ngs</span> <span class="o">+</span> <span class="n">ng</span> <span class="o">+</span> <span class="n">nb</span><span class="p">)</span> <span class="p">:]</span>
+</span><span id="line-120">        <span class="n">Ts</span> <span class="o">=</span> <span class="n">T</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+</span><span id="line-121">
+</span><span id="line-122">        <span class="k">return</span> <span class="n">T_borehole</span><span class="p">,</span> <span class="n">T_ground</span><span class="p">,</span> <span class="n">T_ground_sup</span><span class="p">,</span> <span class="n">T_ground_inf</span><span class="p">,</span> <span class="n">Ts</span></div>
 
 </span></code></pre></div>
     </div></div>
@@ -297,7 +301,7 @@
     <script src="../../_static/documentation_options.js?v=2709fde1"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
-    <script defer="defer" src="../../_static/theme.js?v=d6a9845b"></script>
+    <script defer="defer" src="../../_static/theme.js?v=5db23cf8"></script>
     
 </body>
 

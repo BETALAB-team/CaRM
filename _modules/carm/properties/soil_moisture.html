@@ -27,7 +27,7 @@
   <meta property="og:title" content="carm.properties.soil_moisture | CaRM 0.1 documentation" />
   <meta name="twitter:title" content="carm.properties.soil_moisture | CaRM 0.1 documentation" />
   <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=e72c8e07" />
-  <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=979577e3" />
+  <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=d6d7c91b" />
   <link rel="search" title="Search" href="../../../search.html" />
   <link rel="index" title="Index" href="../../../genindex.html" />
 </head>
@@ -109,6 +109,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../discretization.html">Discretization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../fluid_properties.html">Fluid Properties</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../fls_methods.html">FLS Calculation Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../grout_variable_properties.html">Variable Grout Properties</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../heatflux_mode.html">Heat Flux Mode</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../output.html">Output</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules.html">carm</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../../carm.html">carm package</a></li>
@@ -170,7 +172,7 @@
 </span><span id="line-12">
 </span><span id="line-13">
 <div class="viewcode-block" id="SoilMoisture">
-<a class="viewcode-back" href="../../../carm.properties.html#carm.properties.soil_moisture.SoilMoisture">[docs]</a>
+<a class="viewcode-back" href="../../../grout_variable_properties.html#carm.properties.soil_moisture.SoilMoisture">[docs]</a>
 </span><span id="line-14"><span class="k">class</span><span class="w"> </span><span class="nc">SoilMoisture</span><span class="p">:</span>
 </span><span id="line-15"><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 </span><span id="line-16"><span class="sd">    Soil moisture and thermophysical properties module.</span>
@@ -226,67 +228,67 @@
 </span><span id="line-66">    <span class="n">w_rho</span> <span class="o">=</span> <span class="mf">1000.0</span>
 </span><span id="line-67">    <span class="n">w_latent</span> <span class="o">=</span> <span class="mf">2250000.0</span>
 </span><span id="line-68">    <span class="n">SOIL_PARAMS</span> <span class="o">=</span> <span class="p">{</span>
-</span><span id="line-69">    <span class="s2">&quot;sand&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;b1&quot;</span><span class="p">:</span> <span class="mf">0.228</span><span class="p">,</span> <span class="s2">&quot;b2&quot;</span><span class="p">:</span> <span class="mf">2.406</span><span class="p">,</span> <span class="s2">&quot;b3&quot;</span><span class="p">:</span> <span class="mf">4.909</span><span class="p">,</span> <span class="s2">&quot;theta_s&quot;</span><span class="p">:</span> <span class="mf">0.417</span><span class="p">,</span> <span class="s2">&quot;theta_r&quot;</span><span class="p">:</span> <span class="mf">0.020</span><span class="p">,</span> <span class="s2">&quot;xs&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="o">-</span><span class="mf">0.417</span><span class="p">,</span> <span class="s2">&quot;x0&quot;</span><span class="p">:</span> <span class="mf">0.012</span><span class="p">},</span>
-</span><span id="line-70">    <span class="s2">&quot;loam&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;b1&quot;</span><span class="p">:</span> <span class="mf">0.310</span><span class="p">,</span> <span class="s2">&quot;b2&quot;</span><span class="p">:</span> <span class="mf">1.534</span><span class="p">,</span> <span class="s2">&quot;b3&quot;</span><span class="p">:</span> <span class="mf">3.222</span><span class="p">,</span> <span class="s2">&quot;theta_s&quot;</span><span class="p">:</span> <span class="mf">0.434</span><span class="p">,</span> <span class="s2">&quot;theta_r&quot;</span><span class="p">:</span> <span class="mf">0.027</span><span class="p">,</span> <span class="s2">&quot;xs&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="o">-</span><span class="mf">0.434</span><span class="p">,</span> <span class="s2">&quot;x0&quot;</span><span class="p">:</span> <span class="mf">0.018</span><span class="p">},</span>
-</span><span id="line-71">    <span class="s2">&quot;clay&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;b1&quot;</span><span class="p">:</span> <span class="mf">0.197</span><span class="p">,</span> <span class="s2">&quot;b2&quot;</span><span class="p">:</span> <span class="mf">0.962</span><span class="p">,</span> <span class="s2">&quot;b3&quot;</span><span class="p">:</span> <span class="mf">2.521</span><span class="p">,</span> <span class="s2">&quot;theta_s&quot;</span><span class="p">:</span> <span class="mf">0.385</span><span class="p">,</span> <span class="s2">&quot;theta_r&quot;</span><span class="p">:</span> <span class="mf">0.090</span><span class="p">,</span> <span class="s2">&quot;xs&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="o">-</span><span class="mf">0.385</span><span class="p">,</span> <span class="s2">&quot;x0&quot;</span><span class="p">:</span> <span class="mf">0.024</span><span class="p">},</span>
+</span><span id="line-69">    <span class="s2">&quot;sand&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;b1&quot;</span><span class="p">:</span> <span class="mf">0.228</span><span class="p">,</span>  <span class="s2">&quot;b2&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">2.406</span><span class="p">,</span> <span class="s2">&quot;b3&quot;</span><span class="p">:</span> <span class="mf">4.909</span><span class="p">,</span> <span class="s2">&quot;theta_s&quot;</span><span class="p">:</span> <span class="mf">0.417</span><span class="p">,</span> <span class="s2">&quot;theta_r&quot;</span><span class="p">:</span> <span class="mf">0.020</span><span class="p">,</span> <span class="s2">&quot;xs&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="o">-</span><span class="mf">0.417</span><span class="o">-</span><span class="mf">0.012</span><span class="p">,</span> <span class="s2">&quot;x0&quot;</span><span class="p">:</span> <span class="mf">0.012</span><span class="p">},</span>
+</span><span id="line-70">    <span class="s2">&quot;loam&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;b1&quot;</span><span class="p">:</span> <span class="mf">0.243</span><span class="p">,</span>  <span class="s2">&quot;b2&quot;</span><span class="p">:</span> <span class="mf">0.393</span><span class="p">,</span>  <span class="s2">&quot;b3&quot;</span><span class="p">:</span> <span class="mf">1.534</span><span class="p">,</span> <span class="s2">&quot;theta_s&quot;</span><span class="p">:</span> <span class="mf">0.434</span><span class="p">,</span> <span class="s2">&quot;theta_r&quot;</span><span class="p">:</span> <span class="mf">0.027</span><span class="p">,</span> <span class="s2">&quot;xs&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="o">-</span><span class="mf">0.434</span><span class="o">-</span><span class="mf">0.018</span><span class="p">,</span>   <span class="s2">&quot;x0&quot;</span><span class="p">:</span> <span class="mf">0.018</span><span class="p">},</span>
+</span><span id="line-71">    <span class="s2">&quot;clay&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;b1&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">0.197</span><span class="p">,</span> <span class="s2">&quot;b2&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">0.962</span><span class="p">,</span> <span class="s2">&quot;b3&quot;</span><span class="p">:</span> <span class="mf">2.521</span><span class="p">,</span> <span class="s2">&quot;theta_s&quot;</span><span class="p">:</span> <span class="mf">0.385</span><span class="p">,</span> <span class="s2">&quot;theta_r&quot;</span><span class="p">:</span> <span class="mf">0.090</span><span class="p">,</span> <span class="s2">&quot;xs&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="o">-</span><span class="mf">0.385</span><span class="o">-</span><span class="mf">0.024</span><span class="p">,</span>   <span class="s2">&quot;x0&quot;</span><span class="p">:</span> <span class="mf">0.024</span><span class="p">},</span>
 </span><span id="line-72"><span class="p">}</span>
-</span><span id="line-73">
-</span><span id="line-74">    
-</span><span id="line-75">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-</span><span id="line-76">        <span class="bp">self</span><span class="p">,</span>
-</span><span id="line-77">        <span class="o">*</span><span class="p">,</span>
-</span><span id="line-78">        <span class="n">water_input</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">,</span>
-</span><span id="line-79">        <span class="n">rho_dry</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-</span><span id="line-80">        <span class="n">soil_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span id="line-81">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="line-82">
-</span><span id="line-83">        <span class="bp">self</span><span class="o">.</span><span class="n">water_input</span> <span class="o">=</span> <span class="n">water_input</span>
-</span><span id="line-84">        <span class="bp">self</span><span class="o">.</span><span class="n">rho_dry</span> <span class="o">=</span> <span class="n">rho_dry</span>
-</span><span id="line-85">
-</span><span id="line-86">        <span class="bp">self</span><span class="o">.</span><span class="n">Wvol_prev</span> <span class="o">=</span> <span class="mf">0.0</span>
-</span><span id="line-87">        <span class="bp">self</span><span class="o">.</span><span class="n">Wvol_r</span> <span class="o">=</span> <span class="mf">0.0</span>
-</span><span id="line-88">        <span class="bp">self</span><span class="o">.</span><span class="n">Wvol_loss</span> <span class="o">=</span> <span class="mf">0.0</span>
-</span><span id="line-89">        <span class="bp">self</span><span class="o">.</span><span class="n">Wvol_evap</span> <span class="o">=</span> <span class="mf">0.0</span>
-</span><span id="line-90">
-</span><span id="line-91">        <span class="k">if</span> <span class="n">soil_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SOIL_PARAMS</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
-</span><span id="line-92">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Soil  type must match one between Clay, Loam, and Sand soil types.&quot;</span><span class="p">)</span>
-</span><span id="line-93">        
-</span><span id="line-94">        <span class="bp">self</span><span class="o">.</span><span class="n">b1_loc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SOIL_PARAMS</span><span class="p">[</span><span class="n">soil_type</span><span class="p">][</span><span class="s2">&quot;b1&quot;</span><span class="p">]</span>
-</span><span id="line-95">        <span class="bp">self</span><span class="o">.</span><span class="n">b2_loc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SOIL_PARAMS</span><span class="p">[</span><span class="n">soil_type</span><span class="p">][</span><span class="s2">&quot;b2&quot;</span><span class="p">]</span>
-</span><span id="line-96">        <span class="bp">self</span><span class="o">.</span><span class="n">b3_loc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SOIL_PARAMS</span><span class="p">[</span><span class="n">soil_type</span><span class="p">][</span><span class="s2">&quot;b3&quot;</span><span class="p">]</span>
-</span><span id="line-97">        <span class="bp">self</span><span class="o">.</span><span class="n">theta_s_loc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SOIL_PARAMS</span><span class="p">[</span><span class="n">soil_type</span><span class="p">][</span><span class="s2">&quot;theta_s&quot;</span><span class="p">]</span>
-</span><span id="line-98">        <span class="bp">self</span><span class="o">.</span><span class="n">theta_r_loc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SOIL_PARAMS</span><span class="p">[</span><span class="n">soil_type</span><span class="p">][</span><span class="s2">&quot;theta_r&quot;</span><span class="p">]</span>
-</span><span id="line-99">        <span class="bp">self</span><span class="o">.</span><span class="n">xs_loc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SOIL_PARAMS</span><span class="p">[</span><span class="n">soil_type</span><span class="p">][</span><span class="s2">&quot;xs&quot;</span><span class="p">]</span>
-</span><span id="line-100">        <span class="bp">self</span><span class="o">.</span><span class="n">x0_loc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SOIL_PARAMS</span><span class="p">[</span><span class="n">soil_type</span><span class="p">][</span><span class="s2">&quot;x0&quot;</span><span class="p">]</span>
-</span><span id="line-101">
-</span><span id="line-102">    <span class="k">def</span><span class="w"> </span><span class="nf">_properties_calculation</span><span class="p">(</span>
-</span><span id="line-103">        <span class="bp">self</span><span class="p">,</span>
-</span><span id="line-104">        <span class="n">step</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-</span><span id="line-105">        <span class="n">timesteps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-</span><span id="line-106">        <span class="n">V</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-</span><span id="line-107">        <span class="n">A</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-</span><span id="line-108">        <span class="n">q</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-</span><span id="line-109">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
-</span><span id="line-110"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="line-111"><span class="sd">        Compute thermophysical properties from volumetric water content at a given timestep.</span>
-</span><span id="line-112">
-</span><span id="line-113"><span class="sd">        Updates the water volume balance and computes thermal conductivity via</span>
-</span><span id="line-114"><span class="sd">        Chung-Horton (1987), volumetric heat capacity via de Vries (1963), and</span>
-</span><span id="line-115"><span class="sd">        density via mass-weighted average.</span>
-</span><span id="line-116">
-</span><span id="line-117"><span class="sd">        Parameters</span>
-</span><span id="line-118"><span class="sd">        ----------</span>
-</span><span id="line-119"><span class="sd">        step : int</span>
-</span><span id="line-120"><span class="sd">            Current simulation timestep index.</span>
-</span><span id="line-121"><span class="sd">        timesteps : float</span>
-</span><span id="line-122"><span class="sd">            Duration of each timestep [s].</span>
-</span><span id="line-123"><span class="sd">        V : float</span>
-</span><span id="line-124"><span class="sd">            Reference soil volume [m³].</span>
-</span><span id="line-125"><span class="sd">        A : float</span>
-</span><span id="line-126"><span class="sd">            Surface area over which water input is applied [m²].</span>
-</span><span id="line-127"><span class="sd">        q : float</span>
-</span><span id="line-128"><span class="sd">            Thermal power exchanged by the system [W]. Negative in heat extraction,</span>
-</span><span id="line-129"><span class="sd">            positive in heat injection.</span>
+</span><span id="line-73">    
+</span><span id="line-74">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+</span><span id="line-75">        <span class="bp">self</span><span class="p">,</span>
+</span><span id="line-76">        <span class="o">*</span><span class="p">,</span>
+</span><span id="line-77">        <span class="n">water_input</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">,</span>
+</span><span id="line-78">        <span class="n">rho_dry</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+</span><span id="line-79">        <span class="n">soil_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span id="line-80">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="line-81">
+</span><span id="line-82">        <span class="bp">self</span><span class="o">.</span><span class="n">water_input</span> <span class="o">=</span> <span class="n">water_input</span>
+</span><span id="line-83">        <span class="bp">self</span><span class="o">.</span><span class="n">rho_dry</span> <span class="o">=</span> <span class="n">rho_dry</span>
+</span><span id="line-84">
+</span><span id="line-85">        <span class="bp">self</span><span class="o">.</span><span class="n">Wvol_prev</span> <span class="o">=</span> <span class="mf">0.0</span>
+</span><span id="line-86">        <span class="bp">self</span><span class="o">.</span><span class="n">Wvol_r</span> <span class="o">=</span> <span class="mf">0.0</span>
+</span><span id="line-87">        <span class="bp">self</span><span class="o">.</span><span class="n">Wvol_loss</span> <span class="o">=</span> <span class="mf">0.0</span>
+</span><span id="line-88">        <span class="bp">self</span><span class="o">.</span><span class="n">Wvol_evap</span> <span class="o">=</span> <span class="mf">0.0</span>
+</span><span id="line-89">
+</span><span id="line-90">        <span class="k">if</span> <span class="n">soil_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SOIL_PARAMS</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+</span><span id="line-91">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Soil  type must match one between Clay, Loam, and Sand soil types.&quot;</span><span class="p">)</span>
+</span><span id="line-92">        
+</span><span id="line-93">        <span class="bp">self</span><span class="o">.</span><span class="n">b1_loc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SOIL_PARAMS</span><span class="p">[</span><span class="n">soil_type</span><span class="p">][</span><span class="s2">&quot;b1&quot;</span><span class="p">]</span>
+</span><span id="line-94">        <span class="bp">self</span><span class="o">.</span><span class="n">b2_loc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SOIL_PARAMS</span><span class="p">[</span><span class="n">soil_type</span><span class="p">][</span><span class="s2">&quot;b2&quot;</span><span class="p">]</span>
+</span><span id="line-95">        <span class="bp">self</span><span class="o">.</span><span class="n">b3_loc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SOIL_PARAMS</span><span class="p">[</span><span class="n">soil_type</span><span class="p">][</span><span class="s2">&quot;b3&quot;</span><span class="p">]</span>
+</span><span id="line-96">        <span class="bp">self</span><span class="o">.</span><span class="n">theta_s_loc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SOIL_PARAMS</span><span class="p">[</span><span class="n">soil_type</span><span class="p">][</span><span class="s2">&quot;theta_s&quot;</span><span class="p">]</span>
+</span><span id="line-97">        <span class="bp">self</span><span class="o">.</span><span class="n">theta_r_loc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SOIL_PARAMS</span><span class="p">[</span><span class="n">soil_type</span><span class="p">][</span><span class="s2">&quot;theta_r&quot;</span><span class="p">]</span>
+</span><span id="line-98">        <span class="bp">self</span><span class="o">.</span><span class="n">xs_loc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SOIL_PARAMS</span><span class="p">[</span><span class="n">soil_type</span><span class="p">][</span><span class="s2">&quot;xs&quot;</span><span class="p">]</span>
+</span><span id="line-99">        <span class="bp">self</span><span class="o">.</span><span class="n">x0_loc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SOIL_PARAMS</span><span class="p">[</span><span class="n">soil_type</span><span class="p">][</span><span class="s2">&quot;x0&quot;</span><span class="p">]</span>
+</span><span id="line-100">
+</span><span id="line-101">    <span class="k">def</span><span class="w"> </span><span class="nf">_properties_calculation</span><span class="p">(</span>
+</span><span id="line-102">        <span class="bp">self</span><span class="p">,</span>
+</span><span id="line-103">        <span class="n">step</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span id="line-104">        <span class="n">timesteps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span id="line-105">        <span class="n">V</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+</span><span id="line-106">        <span class="n">A_irr</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+</span><span id="line-107">        <span class="n">q</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+</span><span id="line-108">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+</span><span id="line-109"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="line-110"><span class="sd">        Compute thermophysical properties from volumetric water content at a given timestep.</span>
+</span><span id="line-111">
+</span><span id="line-112"><span class="sd">        Updates the water volume balance and computes thermal conductivity via</span>
+</span><span id="line-113"><span class="sd">        Chung-Horton (1987), volumetric heat capacity via de Vries (1963), and</span>
+</span><span id="line-114"><span class="sd">        density via mass-weighted average.</span>
+</span><span id="line-115">
+</span><span id="line-116"><span class="sd">        Parameters</span>
+</span><span id="line-117"><span class="sd">        ----------</span>
+</span><span id="line-118"><span class="sd">        step : int</span>
+</span><span id="line-119"><span class="sd">            Current simulation timestep index.</span>
+</span><span id="line-120"><span class="sd">        timesteps : float</span>
+</span><span id="line-121"><span class="sd">            Duration of each timestep [s].</span>
+</span><span id="line-122"><span class="sd">        V : float</span>
+</span><span id="line-123"><span class="sd">            Reference soil volume [m³].</span>
+</span><span id="line-124"><span class="sd">        A_irr : float</span>
+</span><span id="line-125"><span class="sd">            Irrigation pipe area. Surface area over which water input is applied [m²].</span>
+</span><span id="line-126"><span class="sd">        q : float</span>
+</span><span id="line-127"><span class="sd">            Thermal power exchanged by the system [W]. Negative in heat extraction,</span>
+</span><span id="line-128"><span class="sd">            positive in heat injection. However, it is correlated only with water</span>
+</span><span id="line-129"><span class="sd">            injection. Hence, the cooling case is the only one supported.</span>
 </span><span id="line-130">
 </span><span id="line-131"><span class="sd">        Returns</span>
 </span><span id="line-132"><span class="sd">        -------</span>
@@ -303,10 +305,10 @@
 </span><span id="line-143">        <span class="n">f_rho</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">wr</span><span class="p">,</span> <span class="n">rho_water</span><span class="p">,</span> <span class="n">rho_dry</span><span class="p">:</span> <span class="n">wr</span> <span class="o">*</span> <span class="n">rho_water</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">wr</span><span class="p">)</span> <span class="o">*</span> <span class="n">rho_dry</span>
 </span><span id="line-144">
 </span><span id="line-145">        <span class="bp">self</span><span class="o">.</span><span class="n">Wvol_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Wvol_prev</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss_factor</span>
-</span><span id="line-146">        <span class="bp">self</span><span class="o">.</span><span class="n">Wvol_evap</span> <span class="o">=</span> <span class="p">((</span><span class="n">q</span> <span class="o">*</span> <span class="n">timesteps</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">w_latent</span><span class="p">)</span> <span class="o">/</span> <span class="mf">1000.0</span>
+</span><span id="line-146">        <span class="bp">self</span><span class="o">.</span><span class="n">Wvol_evap</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(((</span><span class="n">q</span> <span class="o">*</span> <span class="n">timesteps</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">w_latent</span><span class="p">)</span> <span class="o">/</span> <span class="mf">1000.0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 </span><span id="line-147">        <span class="bp">self</span><span class="o">.</span><span class="n">Wvol_r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span>
 </span><span id="line-148">            <span class="bp">self</span><span class="o">.</span><span class="n">Wvol_prev</span>
-</span><span id="line-149">            <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">water_input</span><span class="p">[</span><span class="n">step</span><span class="p">]</span> <span class="o">*</span> <span class="n">A</span> <span class="o">*</span> <span class="n">timesteps</span>
+</span><span id="line-149">            <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">water_input</span><span class="p">[</span><span class="n">step</span><span class="p">]</span> <span class="o">*</span> <span class="n">A_irr</span> <span class="o">*</span> <span class="n">timesteps</span>
 </span><span id="line-150">            <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">Wvol_loss</span>
 </span><span id="line-151">            <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">Wvol_evap</span><span class="p">,</span>
 </span><span id="line-152">            <span class="bp">self</span><span class="o">.</span><span class="n">theta_r_loc</span><span class="o">*</span> <span class="n">V</span><span class="p">,</span>
@@ -344,7 +346,7 @@
     <script src="../../../_static/documentation_options.js?v=2709fde1"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
-    <script defer="defer" src="../../../_static/theme.js?v=d6a9845b"></script>
+    <script defer="defer" src="../../../_static/theme.js?v=5db23cf8"></script>
     
 </body>
 

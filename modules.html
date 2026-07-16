@@ -25,7 +25,7 @@
 <meta content="carm | CaRM 0.1 documentation" property="og:title"/>
 <meta content="carm | CaRM 0.1 documentation" name="twitter:title"/>
 <link href="_static/pygments.css?v=e72c8e07" rel="stylesheet" type="text/css"/>
-<link href="_static/theme.css?v=979577e3" rel="stylesheet" type="text/css"/>
+<link href="_static/theme.css?v=d6d7c91b" rel="stylesheet" type="text/css"/>
 <link href="search.html" rel="search" title="Search"/>
 <link href="genindex.html" rel="index" title="Index"/>
 <link href="carm.html" rel="next" title="carm package"/>
@@ -77,6 +77,8 @@
 <li class="toctree-l1"><a class="reference internal" href="discretization.html">Discretization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fluid_properties.html">Fluid Properties</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fls_methods.html">FLS Calculation Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grout_variable_properties.html">Variable Grout Properties</a></li>
+<li class="toctree-l1"><a class="reference internal" href="heatflux_mode.html">Heat Flux Mode</a></li>
 <li class="toctree-l1"><a class="reference internal" href="output.html">Output</a></li>
 <li class="toctree-l1 current" x-data="{ expanded: $el.classList.contains('current') ? true : false }"><a :class="{ 'expanded' : expanded }" @click="expanded = !expanded" class="current reference internal expandable" href="#">carm<button @click.prevent.stop="expanded = !expanded" type="button" x-cloak=""><span class="sr-only"></span><svg fill="currentColor" height="18px" stroke="none" viewbox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></button></a><ul x-cloak="" x-show="expanded">
 <li class="toctree-l2"><a class="reference internal" href="carm.html">carm package</a></li>
@@ -321,14 +323,18 @@
 <li class="toctree-l3"><a class="reference internal" href="carm.html#carm.BoreholeGeometry"><code class="docutils literal notranslate"><span class="pre">BoreholeGeometry</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.BoreholeGeometry.Lbore"><code class="docutils literal notranslate"><span class="pre">BoreholeGeometry.Lbore</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.BoreholeGeometry.D0"><code class="docutils literal notranslate"><span class="pre">BoreholeGeometry.D0</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#carm.BoreholeGeometry.D_irrigation"><code class="docutils literal notranslate"><span class="pre">BoreholeGeometry.D_irrigation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#carm.BoreholeGeometry.perf_fraction"><code class="docutils literal notranslate"><span class="pre">BoreholeGeometry.perf_fraction</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#id41"><code class="docutils literal notranslate"><span class="pre">BoreholeGeometry.Lbore</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#id42"><code class="docutils literal notranslate"><span class="pre">BoreholeGeometry.D0</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id43"><code class="docutils literal notranslate"><span class="pre">BoreholeGeometry.D_irrigation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id44"><code class="docutils literal notranslate"><span class="pre">BoreholeGeometry.perf_fraction</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.BoreholeGeometry.r0"><code class="docutils literal notranslate"><span class="pre">BoreholeGeometry.r0</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="carm.html#carm.BoreholeMesh"><code class="docutils literal notranslate"><span class="pre">BoreholeMesh</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.BoreholeMesh.m_mesh"><code class="docutils literal notranslate"><span class="pre">BoreholeMesh.m_mesh</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id43"><code class="docutils literal notranslate"><span class="pre">BoreholeMesh.m_mesh</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id45"><code class="docutils literal notranslate"><span class="pre">BoreholeMesh.m_mesh</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="carm.html#carm.BoreholeThermalProperties"><code class="docutils literal notranslate"><span class="pre">BoreholeThermalProperties</span></code></a><ul>
@@ -337,11 +343,11 @@
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.BoreholeThermalProperties.k0"><code class="docutils literal notranslate"><span class="pre">BoreholeThermalProperties.k0</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.BoreholeThermalProperties.stratification"><code class="docutils literal notranslate"><span class="pre">BoreholeThermalProperties.stratification</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.BoreholeThermalProperties.soil_type"><code class="docutils literal notranslate"><span class="pre">BoreholeThermalProperties.soil_type</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id44"><code class="docutils literal notranslate"><span class="pre">BoreholeThermalProperties.cp_0</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id45"><code class="docutils literal notranslate"><span class="pre">BoreholeThermalProperties.rho_0</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id46"><code class="docutils literal notranslate"><span class="pre">BoreholeThermalProperties.k0</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id47"><code class="docutils literal notranslate"><span class="pre">BoreholeThermalProperties.stratification</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id48"><code class="docutils literal notranslate"><span class="pre">BoreholeThermalProperties.soil_type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id46"><code class="docutils literal notranslate"><span class="pre">BoreholeThermalProperties.cp_0</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id47"><code class="docutils literal notranslate"><span class="pre">BoreholeThermalProperties.rho_0</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id48"><code class="docutils literal notranslate"><span class="pre">BoreholeThermalProperties.k0</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id49"><code class="docutils literal notranslate"><span class="pre">BoreholeThermalProperties.stratification</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id50"><code class="docutils literal notranslate"><span class="pre">BoreholeThermalProperties.soil_type</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="carm.html#carm.SingleUtube"><code class="docutils literal notranslate"><span class="pre">SingleUtube</span></code></a><ul>
@@ -420,14 +426,14 @@
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.PhysicalModel.ground"><code class="docutils literal notranslate"><span class="pre">PhysicalModel.ground</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.PhysicalModel.fieldinput"><code class="docutils literal notranslate"><span class="pre">PhysicalModel.fieldinput</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.PhysicalModel.field"><code class="docutils literal notranslate"><span class="pre">PhysicalModel.field</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id49"><code class="docutils literal notranslate"><span class="pre">PhysicalModel.ground_geom</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id50"><code class="docutils literal notranslate"><span class="pre">PhysicalModel.ground_mesh</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id51"><code class="docutils literal notranslate"><span class="pre">PhysicalModel.borehole</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id52"><code class="docutils literal notranslate"><span class="pre">PhysicalModel.fluid</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id53"><code class="docutils literal notranslate"><span class="pre">PhysicalModel.Tg</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id54"><code class="docutils literal notranslate"><span class="pre">PhysicalModel.stratification</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id55"><code class="docutils literal notranslate"><span class="pre">PhysicalModel.ground</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id56"><code class="docutils literal notranslate"><span class="pre">PhysicalModel.fieldinput</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id51"><code class="docutils literal notranslate"><span class="pre">PhysicalModel.ground_geom</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id52"><code class="docutils literal notranslate"><span class="pre">PhysicalModel.ground_mesh</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id53"><code class="docutils literal notranslate"><span class="pre">PhysicalModel.borehole</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id54"><code class="docutils literal notranslate"><span class="pre">PhysicalModel.fluid</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id55"><code class="docutils literal notranslate"><span class="pre">PhysicalModel.Tg</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id56"><code class="docutils literal notranslate"><span class="pre">PhysicalModel.stratification</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id57"><code class="docutils literal notranslate"><span class="pre">PhysicalModel.ground</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id58"><code class="docutils literal notranslate"><span class="pre">PhysicalModel.fieldinput</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="carm.html#carm.Simulation"><code class="docutils literal notranslate"><span class="pre">Simulation</span></code></a><ul>
@@ -447,30 +453,35 @@
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.Simulation.T_bc"><code class="docutils literal notranslate"><span class="pre">Simulation.T_bc</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.Simulation.T_history"><code class="docutils literal notranslate"><span class="pre">Simulation.T_history</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.Simulation.fls"><code class="docutils literal notranslate"><span class="pre">Simulation.fls</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#carm.Simulation.gr_p_varprops"><code class="docutils literal notranslate"><span class="pre">Simulation.gr_p_varprops</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.Simulation.bh_p_varprops"><code class="docutils literal notranslate"><span class="pre">Simulation.bh_p_varprops</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#carm.Simulation.k_ground_history"><code class="docutils literal notranslate"><span class="pre">Simulation.k_ground_history</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#carm.Simulation.cp_ground_history"><code class="docutils literal notranslate"><span class="pre">Simulation.cp_ground_history</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#carm.Simulation.rho_ground_history"><code class="docutils literal notranslate"><span class="pre">Simulation.rho_ground_history</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.Simulation.k_borehole_history"><code class="docutils literal notranslate"><span class="pre">Simulation.k_borehole_history</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.Simulation.cp_borehole_history"><code class="docutils literal notranslate"><span class="pre">Simulation.cp_borehole_history</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.Simulation.rho_borehole_history"><code class="docutils literal notranslate"><span class="pre">Simulation.rho_borehole_history</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#carm.Simulation.wc_history_ground"><code class="docutils literal notranslate"><span class="pre">Simulation.wc_history_ground</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.Simulation.wc_history_borehole"><code class="docutils literal notranslate"><span class="pre">Simulation.wc_history_borehole</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id57"><code class="docutils literal notranslate"><span class="pre">Simulation.model</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id58"><code class="docutils literal notranslate"><span class="pre">Simulation.envprops</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id59"><code class="docutils literal notranslate"><span class="pre">Simulation.envinput</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id60"><code class="docutils literal notranslate"><span class="pre">Simulation.timesteps</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id61"><code class="docutils literal notranslate"><span class="pre">Simulation.n_steps</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id62"><code class="docutils literal notranslate"><span class="pre">Simulation.mw_tot</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id63"><code class="docutils literal notranslate"><span class="pre">Simulation.Tf1</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id59"><code class="docutils literal notranslate"><span class="pre">Simulation.model</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id60"><code class="docutils literal notranslate"><span class="pre">Simulation.envprops</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id61"><code class="docutils literal notranslate"><span class="pre">Simulation.envinput</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id62"><code class="docutils literal notranslate"><span class="pre">Simulation.timesteps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id63"><code class="docutils literal notranslate"><span class="pre">Simulation.n_steps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id64"><code class="docutils literal notranslate"><span class="pre">Simulation.mw_tot</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id65"><code class="docutils literal notranslate"><span class="pre">Simulation.Tf1</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.Simulation.heat_flux"><code class="docutils literal notranslate"><span class="pre">Simulation.heat_flux</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.Simulation.Q_buildings"><code class="docutils literal notranslate"><span class="pre">Simulation.Q_buildings</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.Simulation.T_supply"><code class="docutils literal notranslate"><span class="pre">Simulation.T_supply</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id64"><code class="docutils literal notranslate"><span class="pre">Simulation.fls_mode</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id65"><code class="docutils literal notranslate"><span class="pre">Simulation.groups</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id66"><code class="docutils literal notranslate"><span class="pre">Simulation.T_sup_kusuda</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id67"><code class="docutils literal notranslate"><span class="pre">Simulation.T_middle_kusuda</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id68"><code class="docutils literal notranslate"><span class="pre">Simulation.T_inf_kusuda</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id69"><code class="docutils literal notranslate"><span class="pre">Simulation.env</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id70"><code class="docutils literal notranslate"><span class="pre">Simulation.T_bc</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id71"><code class="docutils literal notranslate"><span class="pre">Simulation.T_history</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id72"><code class="docutils literal notranslate"><span class="pre">Simulation.fls</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id66"><code class="docutils literal notranslate"><span class="pre">Simulation.fls_mode</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id67"><code class="docutils literal notranslate"><span class="pre">Simulation.groups</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id68"><code class="docutils literal notranslate"><span class="pre">Simulation.T_sup_kusuda</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id69"><code class="docutils literal notranslate"><span class="pre">Simulation.T_middle_kusuda</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id70"><code class="docutils literal notranslate"><span class="pre">Simulation.T_inf_kusuda</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id71"><code class="docutils literal notranslate"><span class="pre">Simulation.env</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id72"><code class="docutils literal notranslate"><span class="pre">Simulation.T_bc</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id73"><code class="docutils literal notranslate"><span class="pre">Simulation.T_history</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id74"><code class="docutils literal notranslate"><span class="pre">Simulation.fls</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.Simulation.run"><code class="docutils literal notranslate"><span class="pre">Simulation.run()</span></code></a></li>
 </ul>
 </li>
@@ -479,10 +490,10 @@
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.Fluid.rho_w"><code class="docutils literal notranslate"><span class="pre">Fluid.rho_w</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.Fluid.cp_w"><code class="docutils literal notranslate"><span class="pre">Fluid.cp_w</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.Fluid.ni_w"><code class="docutils literal notranslate"><span class="pre">Fluid.ni_w</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id73"><code class="docutils literal notranslate"><span class="pre">Fluid.k_w</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id74"><code class="docutils literal notranslate"><span class="pre">Fluid.rho_w</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id75"><code class="docutils literal notranslate"><span class="pre">Fluid.cp_w</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id76"><code class="docutils literal notranslate"><span class="pre">Fluid.ni_w</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id75"><code class="docutils literal notranslate"><span class="pre">Fluid.k_w</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id76"><code class="docutils literal notranslate"><span class="pre">Fluid.rho_w</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id77"><code class="docutils literal notranslate"><span class="pre">Fluid.cp_w</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id78"><code class="docutils literal notranslate"><span class="pre">Fluid.ni_w</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="carm.html#carm.EnvironmentalProperties"><code class="docutils literal notranslate"><span class="pre">EnvironmentalProperties</span></code></a><ul>
@@ -493,13 +504,13 @@
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.EnvironmentalProperties.tau"><code class="docutils literal notranslate"><span class="pre">EnvironmentalProperties.tau</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.EnvironmentalProperties.tau_y"><code class="docutils literal notranslate"><span class="pre">EnvironmentalProperties.tau_y</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.EnvironmentalProperties.tau_shift"><code class="docutils literal notranslate"><span class="pre">EnvironmentalProperties.tau_shift</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id77"><code class="docutils literal notranslate"><span class="pre">EnvironmentalProperties.R_ext</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id78"><code class="docutils literal notranslate"><span class="pre">EnvironmentalProperties.absorptance</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id79"><code class="docutils literal notranslate"><span class="pre">EnvironmentalProperties.eps</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id80"><code class="docutils literal notranslate"><span class="pre">EnvironmentalProperties.At</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id81"><code class="docutils literal notranslate"><span class="pre">EnvironmentalProperties.tau</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id82"><code class="docutils literal notranslate"><span class="pre">EnvironmentalProperties.tau_y</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id83"><code class="docutils literal notranslate"><span class="pre">EnvironmentalProperties.tau_shift</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id79"><code class="docutils literal notranslate"><span class="pre">EnvironmentalProperties.R_ext</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id80"><code class="docutils literal notranslate"><span class="pre">EnvironmentalProperties.absorptance</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id81"><code class="docutils literal notranslate"><span class="pre">EnvironmentalProperties.eps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id82"><code class="docutils literal notranslate"><span class="pre">EnvironmentalProperties.At</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id83"><code class="docutils literal notranslate"><span class="pre">EnvironmentalProperties.tau</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id84"><code class="docutils literal notranslate"><span class="pre">EnvironmentalProperties.tau_y</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id85"><code class="docutils literal notranslate"><span class="pre">EnvironmentalProperties.tau_shift</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="carm.html#carm.EnvironmentalTimeSeries"><code class="docutils literal notranslate"><span class="pre">EnvironmentalTimeSeries</span></code></a><ul>
@@ -507,10 +518,10 @@
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.EnvironmentalTimeSeries.T_ext"><code class="docutils literal notranslate"><span class="pre">EnvironmentalTimeSeries.T_ext</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.EnvironmentalTimeSeries.SolarRad"><code class="docutils literal notranslate"><span class="pre">EnvironmentalTimeSeries.SolarRad</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.EnvironmentalTimeSeries.water_input"><code class="docutils literal notranslate"><span class="pre">EnvironmentalTimeSeries.water_input</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id84"><code class="docutils literal notranslate"><span class="pre">EnvironmentalTimeSeries.Tm</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id85"><code class="docutils literal notranslate"><span class="pre">EnvironmentalTimeSeries.T_ext</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id86"><code class="docutils literal notranslate"><span class="pre">EnvironmentalTimeSeries.SolarRad</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id87"><code class="docutils literal notranslate"><span class="pre">EnvironmentalTimeSeries.water_input</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id86"><code class="docutils literal notranslate"><span class="pre">EnvironmentalTimeSeries.Tm</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id87"><code class="docutils literal notranslate"><span class="pre">EnvironmentalTimeSeries.T_ext</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id88"><code class="docutils literal notranslate"><span class="pre">EnvironmentalTimeSeries.SolarRad</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id89"><code class="docutils literal notranslate"><span class="pre">EnvironmentalTimeSeries.water_input</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.EnvironmentalTimeSeries.from_excel"><code class="docutils literal notranslate"><span class="pre">EnvironmentalTimeSeries.from_excel()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.EnvironmentalTimeSeries.from_array"><code class="docutils literal notranslate"><span class="pre">EnvironmentalTimeSeries.from_array()</span></code></a></li>
 </ul>
@@ -520,7 +531,7 @@
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.FieldInput.borehole_coordinates"><code class="docutils literal notranslate"><span class="pre">FieldInput.borehole_coordinates</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.FieldInput.rb"><code class="docutils literal notranslate"><span class="pre">FieldInput.rb</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.FieldInput.layout"><code class="docutils literal notranslate"><span class="pre">FieldInput.layout</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id88"><code class="docutils literal notranslate"><span class="pre">FieldInput.borehole_coordinates</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id90"><code class="docutils literal notranslate"><span class="pre">FieldInput.borehole_coordinates</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.FieldInput.from_excel"><code class="docutils literal notranslate"><span class="pre">FieldInput.from_excel()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.FieldInput.from_array"><code class="docutils literal notranslate"><span class="pre">FieldInput.from_array()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.FieldInput.from_matrix"><code class="docutils literal notranslate"><span class="pre">FieldInput.from_matrix()</span></code></a></li>
@@ -530,8 +541,8 @@
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.Field.fieldinput"><code class="docutils literal notranslate"><span class="pre">Field.fieldinput</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.Field.field_dict"><code class="docutils literal notranslate"><span class="pre">Field.field_dict</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.Field.distance_matrix"><code class="docutils literal notranslate"><span class="pre">Field.distance_matrix</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id89"><code class="docutils literal notranslate"><span class="pre">Field.distance_matrix</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="carm.html#id90"><code class="docutils literal notranslate"><span class="pre">Field.field_dict</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id91"><code class="docutils literal notranslate"><span class="pre">Field.distance_matrix</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="carm.html#id92"><code class="docutils literal notranslate"><span class="pre">Field.field_dict</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="carm.html#carm.Field.plot_field"><code class="docutils literal notranslate"><span class="pre">Field.plot_field()</span></code></a></li>
 </ul>
 </li>
@@ -556,6 +567,6 @@
 <script src="_static/documentation_options.js?v=2709fde1"></script>
 <script src="_static/doctools.js?v=fd6eb6e6"></script>
 <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
-<script defer="defer" src="_static/theme.js?v=d6a9845b"></script>
+<script defer="defer" src="_static/theme.js?v=5db23cf8"></script>
 </body>
 </html>
