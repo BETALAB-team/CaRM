@@ -676,9 +676,6 @@ class Simulation:
             )  # here it is possible to change the polynomial function
             f_EER = copy.deepcopy(f_COP)
 
-            self.Tf1 = np.zeros((n, self.n_steps), dtype=np.float64)
-            self.Tf1[:, 0] = self.T_history[0, :, ns + nm + borehole.id_inlet]
-
             self.COP = np.full(self.n_steps, np.nan, dtype=np.float64)
             self.EER = copy.deepcopy(self.COP)
             self.Q_ground = np.full(self.n_steps, np.nan, dtype=np.float64)
