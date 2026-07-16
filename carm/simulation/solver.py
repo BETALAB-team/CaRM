@@ -663,8 +663,8 @@ class Simulation:
         self.A = [0] * n  # type: ignore
         self.A_inv = copy.deepcopy(self.A)  # type: ignore
 
-        group_inlet_fluid_idx = [g[0] for g in self.groups.values()] # to define the head boreholes of each series connection
-        group_outlet_fluid_idx = [g[-1] for g in self.groups.values()] # to define the bottom boreholes of each series connection
+        group_inlet_fluid_idx = np.array([g[0] for g in self.groups.values()]) # to define the head boreholes of each series connection
+        group_outlet_fluid_idx = np.array([g[-1] for g in self.groups.values()]) # to define the bottom boreholes of each series connection
         mw_boreholes = np.repeat(self.mw_tot, [len(g) for g in self.groups.values()], axis = 0) # to account for the massflow of each borehole
 
         self.Tf1_groups = np.zeros((n_groups, self.n_steps), dtype=np.float64)
