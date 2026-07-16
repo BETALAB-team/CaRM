@@ -135,6 +135,10 @@ This library is based on the following works:
 - de Vries, D.A. (1963). *Thermal properties of soils.* In W.R. van Wijk (Ed.), 
   Physics of Plant Environment. North-Holland Publishing Company, Amsterdam.
 
+- Ruhnau, O., Hirth, L., Praktiknjo, A. (2019). *Time series of heat demand and 
+  heat pump efficiency for energy system modeling.* Scientific Data, 6, 189. 
+  https://doi.org/10.1038/s41597-019-0199-y
+
 ## License
 
 MIT License — see [LICENSE](LICENSE) for details.

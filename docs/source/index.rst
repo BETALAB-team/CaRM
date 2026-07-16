@@ -15,5 +15,6 @@ flow effects.
    fluid_properties
    fls_methods
    grout_variable_properties
+   heatflux_mode
    output
    modules
