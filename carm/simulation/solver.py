@@ -875,10 +875,6 @@ class Simulation:
             step=step,
             timesteps=self.timesteps,
             V=np.pi * (borehole.D0**2) / 4.0 * borehole.Lbore,
-<<<<<<< HEAD
-            A=np.pi * (borehole.D0**2) / 4.0,
-            q=self.q_nbhes[step, j],
-=======
             A_irr=np.pi
             * borehole.D_irrigation
             * borehole.perf_fraction
@@ -886,7 +882,6 @@ class Simulation:
             q=np.mean(
                 self.q_nbhes[step - 1]
             ),  # shared status because wc sensitivity to the borehole heat flux is very low
->>>>>>> COP-implementation
         )
 
         self.k_borehole_history[step] = k_bh

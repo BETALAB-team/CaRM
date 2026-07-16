@@ -66,11 +66,7 @@ class SoilMoisture:
     w_rho = 1000.0
     w_latent = 2250000.0
     SOIL_PARAMS = {
-<<<<<<< HEAD
-    "sand": {"b1": 0.228,  "b2": -2.406, "b3": 4.909, "theta_s": 0.417, "theta_r": 0.0295, "xs": 1-0.417-0.012, "x0": 0.012},
-=======
     "sand": {"b1": 0.228,  "b2": -2.406, "b3": 4.909, "theta_s": 0.417, "theta_r": 0.020, "xs": 1-0.417-0.012, "x0": 0.012},
->>>>>>> COP-implementation
     "loam": {"b1": 0.243,  "b2": 0.393,  "b3": 1.534, "theta_s": 0.434, "theta_r": 0.027, "xs": 1-0.434-0.018,   "x0": 0.018},
     "clay": {"b1": -0.197, "b2": -0.962, "b3": 2.521, "theta_s": 0.385, "theta_r": 0.090, "xs": 1-0.385-0.024,   "x0": 0.024},
 }
@@ -128,13 +124,9 @@ class SoilMoisture:
         A_irr : float
             Irrigation pipe area. Surface area over which water input is applied [m²].
         q : float
-<<<<<<< HEAD
-            Thermal power exchanged by the system [W].
-=======
             Thermal power exchanged by the system [W]. Negative in heat extraction,
             positive in heat injection. However, it is correlated only with water
             injection. Hence, the cooling case is the only one supported.
->>>>>>> COP-implementation
 
         Returns
         -------
