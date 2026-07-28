@@ -57,9 +57,9 @@ def test_field_input_stores_values():
     assert fi.rb == 0.075
 
 
-def test_field_input_coordinates_none_before_load():
+def test_field_input_coordinates_empty_before_load():
     fi = FieldInput(n_bhes=4, xmin=0.0, ymin=0.0, xmax=10.0, ymax=10.0, rb=0.075)
-    assert fi.borehole_coordinates is None
+    assert fi.borehole_coordinates == []
 
 
 def test_field_input_invalid_bbox_x():

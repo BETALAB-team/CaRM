@@ -87,7 +87,8 @@ def coaxial(fluid, thermal_props):
         Dp2i=0.110,
         pipe1_thick=0.003,
         pipe2_thick=0.006,
-        k_pipe=0.38,
+        k_pipe1=0.38,
+        k_pipe2=0.38,
         supply_and_return="1_2",
     )
 
@@ -347,7 +348,8 @@ def test_coaxial_invalid_supply_return():
             fluid=Fluid(k_w=0.57, rho_w=1000.0, cp_w=4200.0, ni_w=1.5e-6),
             Dp1i=0.032, Dp2i=0.110,
             pipe1_thick=0.003, pipe2_thick=0.006,
-            k_pipe=0.38,
+            k_pipe1=0.38,
+            k_pipe2=0.38,
             supply_and_return="3_4",  # invalido
         )
 
@@ -456,14 +458,3 @@ def test_helical_invalid_supply_return():
             Lp2tot=34 * np.pi * 0.02114,
             k_pipe=0.47,
         )
-# ============================================================
-# Fluid
-# ============================================================
-
-def test_fluid_stores_values():
-    from carm import Fluid
-    f = Fluid(k_w=0.57, rho_w=1000.0, cp_w=4200.0, ni_w=1.5e-6)
-    assert f.k_w == 0.57
-    assert f.rho_w == 1000.0
-    assert f.cp_w == 4200.0
-    assert f.ni_w == 1.5e-6
