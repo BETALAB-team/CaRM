@@ -1,7 +1,7 @@
 About
 =====
 
-CaRM is developed within the **BETALAB** research group at the Department of 
+pyCaRM is developed within the **BETALAB** research group at the Department of
 Industrial Engineering, University of Padova.
 
 Authors

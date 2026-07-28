@@ -1,7 +1,7 @@
 FLS Calculation Methods
 =======================
 
-CaRM precomputes a thermal response matrix using the Finite Line Source (FLS)
+pyCaRM precomputes a thermal response matrix using the Finite Line Source (FLS)
 analytical model. Two methods are available to evaluate the effective distance
 between boreholes, controlled by the ``fls_mode`` parameter of
 :class:`~carm.simulation.Simulation`.

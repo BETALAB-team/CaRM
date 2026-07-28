@@ -2,15 +2,14 @@
   <img src="docs/CaRM_logo.jpg" width="200"/>
 </p>
 
-# CaRM
+# pyCaRM
 
-**CaRM** (Capacity Resistance Model) is a Python library for the simulation of 
+**pyCaRM** (CApacity Resistance Model) is a Python library for the simulation of 
 borehole heat exchanger (BHE) systems. It models the transient thermal response 
 of the ground and borehole, supporting single and multi-borehole configurations 
 with surface boundary conditions.
 
-> ⚠️ Work in progress — API may change.
-> 📖 **Documentation:** https://betalab-team.github.io/CaRM/
+> 📖 **Documentation:** https://betalab-team.github.io/pyCaRM/
 
 ## Features
 
@@ -21,34 +20,38 @@ with surface boundary conditions.
 - Voronoi-based field decomposition for multi-borehole layouts
 - Finite Line Source (FLS) thermal interference model
 - Parallel and series borehole connection modes
+- Heat flux mode: drive the simulation from a heat pump-side thermal load and
+  supply temperature, with heat pump COP/EER performance accounted for
+- Time-variable grout thermophysical properties driven by soil moisture
+  content (irrigation/precipitation input)
 
 ## Installation
 
 Clone the repository and install:
 ```bash
-git clone https://github.com/BETALAB-team/CaRM.git
-cd CaRM
+git clone https://github.com/BETALAB-team/pyCaRM.git
+cd pyCaRM
 pip install .
 ```
 
 **Developers:**
 ```bash
-git clone https://github.com/BETALAB-team/CaRM.git
-cd CaRM
+git clone https://github.com/BETALAB-team/pyCaRM.git
+cd pyCaRM
 pip install -e ".[dev]"
 ```
 
 ## Optional Dependencies
 
-- - [CoolProp](http://www.coolprop.org) — for computing fluid thermophysical properties. See [Fluid Properties](https://betalab-team.github.io/CaRM/fluid_properties.html) for usage.
+- - [CoolProp](http://www.coolprop.org) — for computing fluid thermophysical properties. See [Fluid Properties](https://betalab-team.github.io/pyCaRM/fluid_properties.html) for usage.
 
 ## Documentation
 
-Full documentation is available at **https://betalab-team.github.io/CaRM/**
+Full documentation is available at **https://betalab-team.github.io/pyCaRM/**
 
 To build the documentation locally, install the documentation dependencies first:
 ```bash
-cd CaRM
+cd pyCaRM
 pip install -e ".[docs]"
 ```
 Then build:
@@ -61,15 +64,17 @@ The HTML documentation will be available in `docs/build/html/`.
 ## Examples
 
 Complete working scripts for all supported configurations are available in the
-`examples/` folder. See also the [documentation](https://betalab-team.github.io/CaRM/)
+`examples/` folder. See also the [documentation](https://betalab-team.github.io/pyCaRM/)
 for detailed usage guides.
 
 - `SingleUtube_multi_parallel.py` — multi-borehole field, parallel mode
 - `SingleUtube_multi_series.py` — multi-borehole field, series mode
+- `SingleUtube_multi_series_heat_flux.py` — multi-borehole field, series mode, heat flux (COP/EER) mode
 - `SingleUtube.py` — single borehole, single U-tube
 - `DoubleUtube.py` — single borehole, double U-tube
 - `Coaxial.py` — single borehole, coaxial
 - `Helical.py` — single borehole, helical
+- `Helical_variable_properties.py` — single borehole, helical, time-variable grout properties from soil moisture
 
 ## Authors
 

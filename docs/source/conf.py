@@ -8,7 +8,7 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('../..'))
 
-project = 'CaRM'
+project = 'pyCaRM'
 copyright = '2026, Alessio Tollin, Angelo Zarrella'
 author = 'Alessio Tollin, Angelo Zarrella'
 release = '0.1'

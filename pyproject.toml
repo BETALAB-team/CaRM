@@ -11,7 +11,7 @@ authors = [
 requires-python = ">=3.11"
 
 license = {text = "MIT"}
-name = "CaRM"
+name = "pyCaRM"
 version = "0.1.0"
 dependencies = [
     "numpy",       # array
