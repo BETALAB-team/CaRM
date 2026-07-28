@@ -3,7 +3,7 @@ Quickstart
 
 This page shows a minimal end-to-end example: a single borehole with a
 Single U-tube configuration, one soil layer, and no inter-borehole thermal
-interference. It is the simplest possible CaRM simulation and a good
+interference. It is the simplest possible pyCaRM simulation and a good
 starting point before moving to multi-borehole fields.
 
 Imports

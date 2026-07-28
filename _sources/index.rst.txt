@@ -1,7 +1,7 @@
-CaRM documentation
-==================
+pyCaRM documentation
+====================
 
-CaRM is a Python library for borehole heat exchanger (BHE) simulation,
+pyCaRM is a Python library for borehole heat exchanger (BHE) simulation,
 supporting single and multi-borehole configurations with optional groundwater
 flow effects.
 

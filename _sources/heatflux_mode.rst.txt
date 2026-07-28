@@ -1,7 +1,7 @@
 Heat Flux Mode
 ==============
 
-CaRM can drive the simulation from a building-side thermal load and supply
+pyCaRM can drive the simulation from a building-side thermal load and supply
 temperature instead of a prescribed inlet fluid temperature. In this mode,
 the inlet fluid temperature ``Tf1`` is not an input: it is solved for at each
 timestep so that the heat extracted from (or rejected to) the ground matches
